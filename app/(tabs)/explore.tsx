@@ -1,112 +1,189 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React from 'react';
+import { StyleSheet, ScrollView, View, Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { PieChart, BarChart } from 'react-native-gifted-charts';
+import { useTransactionStore } from '@/store/transactionStore';
+import { Colors } from '@/constants/Colors';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { formatCurrency } from '@/utils/format';
+import { TransactionItem } from '@/components/ui/TransactionItem';
 
-import { Collapsible } from '@/components/ui/collapsible';
-import { ExternalLink } from '@/components/external-link';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Fonts } from '@/constants/theme';
+export default function AnalyticsScreen() {
+  const colorScheme = useColorScheme();
+  const theme = colorScheme ?? 'light';
+  const { transactions, getIncome, getExpense } = useTransactionStore();
 
-export default function TabTwoScreen() {
+  const income = getIncome();
+  const expense = getExpense();
+
+  // Prepare Pie Chart Data (Expenses by Category)
+  const expenseTransactions = transactions.filter(t => t.type === 'expense');
+  const expensesByCategory = expenseTransactions.reduce((acc, curr) => {
+    acc[curr.category] = (acc[curr.category] || 0) + curr.amount;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const pieData = Object.keys(expensesByCategory).map((category, index) => {
+    const colors = ['#f87171', '#fb923c', '#facc15', '#a3e635', '#4ade80', '#22d3ee', '#818cf8', '#c084fc', '#e879f9'];
+    return {
+      value: expensesByCategory[category],
+      color: colors[index % colors.length],
+      text: category,
+      shiftTextX: 10,
+      shiftTextY: 10,
+    };
+  });
+
+  // Prepare Bar Chart Data (Income vs Expense)
+  const barData = [
+    { value: income, label: 'Income', frontColor: '#4ade80' },
+    { value: expense, label: 'Expense', frontColor: '#f87171' },
+  ];
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText
-          type="title"
-          style={{
-            fontFamily: Fonts.rounded,
-          }}>
-          Explore
-        </ThemedText>
-      </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image
-          source={require('@/assets/images/react-logo.png')}
-          style={{ width: 100, height: 100, alignSelf: 'center' }}
-        />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful{' '}
-          <ThemedText type="defaultSemiBold" style={{ fontFamily: Fonts.mono }}>
-            react-native-reanimated
-          </ThemedText>{' '}
-          library to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
-    </ParallaxScrollView>
+    <View style={[styles.container, { backgroundColor: Colors[theme].background }]}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']}>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.header}>
+            <Text style={[styles.title, { color: Colors[theme].text }]}>Analytics</Text>
+          </View>
+
+          {transactions.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={{ color: Colors[theme].icon }}>No data to display</Text>
+            </View>
+          ) : (
+            <>
+              <View style={[styles.chartContainer, { backgroundColor: theme === 'dark' ? '#1f2937' : '#fff' }]}>
+                <Text style={[styles.chartTitle, { color: Colors[theme].text }]}>Income vs Expense</Text>
+                <BarChart
+                  data={barData}
+                  barWidth={50}
+                  noOfSections={4}
+                  barBorderRadius={4}
+                  frontColor={Colors[theme].tint}
+                  yAxisThickness={0}
+                  xAxisThickness={0}
+                  yAxisTextStyle={{ color: Colors[theme].icon }}
+                  xAxisLabelTextStyle={{ color: Colors[theme].text }}
+                  width={300}
+                  height={200}
+                  isAnimated
+                />
+              </View>
+
+              {expenseTransactions.length > 0 && (
+                <View style={[styles.chartContainer, { backgroundColor: theme === 'dark' ? '#1f2937' : '#fff' }]}>
+                  <Text style={[styles.chartTitle, { color: Colors[theme].text }]}>Expenses by Category</Text>
+                  <View style={{ alignItems: 'center' }}>
+                    <PieChart
+                      data={pieData}
+                      donut
+                      showText
+                      textColor={Colors[theme].text}
+                      radius={120}
+                      innerRadius={60}
+                      textSize={12}
+                      focusOnPress
+                      showValuesAsLabels
+                      showTextBackground
+                      textBackgroundRadius={20}
+                    />
+                  </View>
+                  <View style={styles.legendContainer}>
+                    {Object.keys(expensesByCategory).map((category, index) => {
+                       const colors = ['#f87171', '#fb923c', '#facc15', '#a3e635', '#4ade80', '#22d3ee', '#818cf8', '#c084fc', '#e879f9'];
+                       const color = colors[index % colors.length];
+                       return (
+                        <View key={index} style={styles.legendItem}>
+                          <View style={[styles.legendColor, { backgroundColor: color }]} />
+                          <Text style={[styles.legendText, { color: Colors[theme].text }]}>
+                            {category} ({formatCurrency(expensesByCategory[category])})
+                          </Text>
+                        </View>
+                       );
+                    })}
+                  </View>
+                </View>
+              )}
+
+              <View style={styles.sectionHeader}>
+                <Text style={[styles.sectionTitle, { color: Colors[theme].text }]}>All Transactions</Text>
+              </View>
+
+              {transactions.map((t) => (
+                <TransactionItem key={t.id} transaction={t} />
+              ))}
+            </>
+          )}
+        </ScrollView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
+  container: {
+    flex: 1,
   },
-  titleContainer: {
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 80,
+  },
+  header: {
+    marginBottom: 24,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+  },
+  chartContainer: {
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  chartTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 16,
+  },
+  emptyState: {
+    padding: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 40,
+  },
+  sectionHeader: {
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  legendContainer: {
+    marginTop: 20,
     flexDirection: 'row',
-    gap: 8,
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 12,
+    marginBottom: 8,
+  },
+  legendColor: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 8,
+  },
+  legendText: {
+    fontSize: 12,
   },
 });
