@@ -5,6 +5,7 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Transaction, useTransactionStore } from '@/store/transactionStore';
 import { formatCurrency, formatDate } from '@/utils/format';
+import { useRouter } from 'expo-router';
 import { ArrowUpRight, ArrowDownLeft, ShoppingBag, Coffee, Home, Zap, Car, Utensils, Trash2 } from 'lucide-react-native';
 
 interface TransactionItemProps {
@@ -26,6 +27,7 @@ const getCategoryIcon = (category: string, color: string) => {
 };
 
 export function TransactionItem({ transaction }: TransactionItemProps) {
+  const router = useRouter();
   const colorScheme = useColorScheme();
   const theme = colorScheme ?? 'light';
   const { deleteTransaction } = useTransactionStore();
@@ -46,27 +48,34 @@ export function TransactionItem({ transaction }: TransactionItemProps) {
 
   return (
     <Swipeable renderRightActions={renderRightActions}>
-      <View style={[styles.container, { borderBottomColor: Colors[theme].border, backgroundColor: Colors[theme].background }]}>
-        <View style={[
-          styles.iconContainer, 
-          { 
-            backgroundColor: isIncome 
-              ? (theme === 'dark' ? '#064e3b' : '#dcfce7') 
-              : (theme === 'dark' ? '#7f1d1d' : '#fee2e2') 
-          }
-        ]}>
-          {getCategoryIcon(transaction.category, isIncome ? (theme === 'dark' ? '#34d399' : Colors.light.success) : (theme === 'dark' ? '#f87171' : Colors.light.danger))}
-        </View>
-        
-        <View style={styles.details}>
-          <Text style={[styles.description, { color: Colors[theme].text }]}>{transaction.description}</Text>
-          <Text style={[styles.category, { color: Colors[theme].icon }]}>{transaction.category} • {formatDate(transaction.date)}</Text>
-        </View>
+      <RectButton 
+        onPress={() => router.push({
+          pathname: '/modal',
+          params: { id: transaction.id }
+        })}
+      >
+        <View style={[styles.container, { borderBottomColor: Colors[theme].border, backgroundColor: Colors[theme].background }]}>
+          <View style={[
+            styles.iconContainer, 
+            { 
+              backgroundColor: isIncome 
+                ? (theme === 'dark' ? '#064e3b' : '#dcfce7') 
+                : (theme === 'dark' ? '#7f1d1d' : '#fee2e2') 
+            }
+          ]}>
+            {getCategoryIcon(transaction.category, isIncome ? (theme === 'dark' ? '#34d399' : Colors.light.success) : (theme === 'dark' ? '#f87171' : Colors.light.danger))}
+          </View>
+          
+          <View style={styles.details}>
+            <Text style={[styles.description, { color: Colors[theme].text }]}>{transaction.description}</Text>
+            <Text style={[styles.category, { color: Colors[theme].icon }]}>{transaction.category} • {formatDate(transaction.date)}</Text>
+          </View>
 
-        <Text style={[styles.amount, { color: amountColor }]}>
-          {isIncome ? '+' : '-'}{formatCurrency(transaction.amount)}
-        </Text>
-      </View>
+          <Text style={[styles.amount, { color: amountColor }]}>
+            {isIncome ? '+' : '-'}{formatCurrency(transaction.amount)}
+          </Text>
+        </View>
+      </RectButton>
     </Swipeable>
   );
 }

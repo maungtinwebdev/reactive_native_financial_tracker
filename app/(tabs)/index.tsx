@@ -2,24 +2,28 @@ import React from 'react';
 import { StyleSheet, ScrollView, View, Text, TouchableOpacity, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useTransactionStore } from '@/store/transactionStore';
+import { useTransactionStore, FilterType } from '@/store/transactionStore';
 import { TransactionItem } from '@/components/ui/TransactionItem';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { formatCurrency } from '@/utils/format';
 import { Plus } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { DateNavigator } from '@/components/DateNavigator';
 
 export default function DashboardScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const theme = colorScheme ?? 'light';
-  const { transactions, getBalance, getIncome, getExpense } = useTransactionStore();
+  const { transactions, filter, setFilter, getBalance, getIncome, getExpense, getFilteredTransactions, dateRange } = useTransactionStore();
 
   const balance = getBalance();
   const income = getIncome();
   const expense = getExpense();
-  const recentTransactions = transactions.slice(0, 5);
+  const filteredTransactions = getFilteredTransactions();
+  const recentTransactions = filteredTransactions.slice(0, 5);
+
+  const filters: FilterType[] = ['daily', 'monthly', 'yearly', 'custom'];
 
   return (
     <View style={[styles.container, { backgroundColor: Colors[theme].background }]}>
@@ -27,6 +31,32 @@ export default function DashboardScreen() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
             <Text style={[styles.greeting, { color: Colors[theme].text }]}>Financial Overview</Text>
+            
+            <View style={styles.filterContainer}>
+              {filters.map((f) => (
+                <TouchableOpacity
+                  key={f}
+                  style={[
+                    styles.filterChip,
+                    filter === f 
+                      ? { backgroundColor: Colors[theme].tint } 
+                      : { backgroundColor: Colors[theme].border }
+                  ]}
+                  onPress={() => setFilter(f)}
+                >
+                  <Text style={[
+                    styles.filterText,
+                    filter === f 
+                      ? { color: theme === 'dark' ? Colors.light.text : '#fff' } 
+                      : { color: Colors[theme].text }
+                  ]}>
+                    {f.charAt(0).toUpperCase() + f.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <DateNavigator />
           </View>
 
           <LinearGradient
@@ -95,6 +125,20 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: 24,
     marginTop: 8,
+  },
+  filterContainer: {
+    flexDirection: 'row',
+    marginTop: 16,
+    gap: 8,
+  },
+  filterChip: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+  },
+  filterText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   greeting: {
     fontSize: 28,

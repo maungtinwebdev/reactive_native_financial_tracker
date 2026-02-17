@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, TextInput, View, Text, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useTransactionStore, TransactionType } from '@/store/transactionStore';
 import { Colors } from '@/constants/Colors';
@@ -13,14 +13,28 @@ const EXPENSE_CATEGORIES = ['Food', 'Transport', 'Housing', 'Utilities', 'Shoppi
 
 export default function ModalScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ id: string }>();
+  const isEditing = !!params.id;
   const colorScheme = useColorScheme();
   const theme = colorScheme ?? 'light';
-  const { addTransaction } = useTransactionStore();
+  const { transactions, addTransaction, updateTransaction } = useTransactionStore();
 
   const [type, setType] = useState<TransactionType>('expense');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
+
+  React.useEffect(() => {
+    if (isEditing) {
+      const transaction = transactions.find(t => t.id === params.id);
+      if (transaction) {
+        setType(transaction.type);
+        setAmount(transaction.amount.toString());
+        setCategory(transaction.category);
+        setDescription(transaction.description);
+      }
+    }
+  }, [params.id, transactions]);
 
   const categories = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
 
@@ -38,13 +52,22 @@ export default function ModalScreen() {
       return;
     }
 
-    addTransaction({
-      amount: Number(amount),
-      category,
-      description,
-      type,
-      date: new Date().toISOString(),
-    });
+    if (isEditing && params.id) {
+      updateTransaction(params.id, {
+        amount: Number(amount),
+        category,
+        description,
+        type,
+      });
+    } else {
+      addTransaction({
+        amount: Number(amount),
+        category,
+        description,
+        type,
+        date: new Date().toISOString(),
+      });
+    }
 
     router.back();
   };
@@ -54,7 +77,7 @@ export default function ModalScreen() {
       <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
       
       <View style={styles.header}>
-        <Text style={[styles.title, { color: Colors[theme].text }]}>New Transaction</Text>
+        <Text style={[styles.title, { color: Colors[theme].text }]}>{isEditing ? 'Edit Transaction' : 'New Transaction'}</Text>
         <TouchableOpacity onPress={() => router.back()}>
           <X color={Colors[theme].text} size={24} />
         </TouchableOpacity>
@@ -152,7 +175,7 @@ export default function ModalScreen() {
         </ScrollView>
 
         <View style={[styles.footer, { borderTopColor: Colors[theme].border }]}>
-          <Button title="Save Transaction" onPress={handleSave} />
+          <Button title={isEditing ? "Update Transaction" : "Save Transaction"} onPress={handleSave} />
         </View>
       </KeyboardAvoidingView>
     </View>

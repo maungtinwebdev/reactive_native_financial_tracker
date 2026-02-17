@@ -1,23 +1,150 @@
 import React from 'react';
-import { StyleSheet, ScrollView, View, Text } from 'react-native';
+import { StyleSheet, ScrollView, View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PieChart, BarChart } from 'react-native-gifted-charts';
-import { useTransactionStore } from '@/store/transactionStore';
+import { useTransactionStore, FilterType } from '@/store/transactionStore';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { formatCurrency } from '@/utils/format';
 import { TransactionItem } from '@/components/ui/TransactionItem';
 
+import { DateNavigator } from '@/components/DateNavigator';
+
 export default function AnalyticsScreen() {
   const colorScheme = useColorScheme();
   const theme = colorScheme ?? 'light';
-  const { transactions, getIncome, getExpense } = useTransactionStore();
+  const { transactions, filter, setFilter, getIncome, getExpense, getFilteredTransactions, selectedDate, dateRange } = useTransactionStore();
 
   const income = getIncome();
   const expense = getExpense();
+  const filteredTransactions = getFilteredTransactions();
+  const filters: FilterType[] = ['daily', 'monthly', 'yearly', 'custom'];
 
   // Prepare Pie Chart Data (Expenses by Category)
-  const expenseTransactions = transactions.filter(t => t.type === 'expense');
+  const expenseTransactions = filteredTransactions.filter(t => t.type === 'expense');
+  
+  // Prepare Trend Data (Expenses over time)
+  const getTrendData = () => {
+    const date = new Date(selectedDate);
+    if (filter === 'daily') {
+      // Hourly breakdown (0-23)
+      const hourlyData = new Array(24).fill(0);
+      expenseTransactions.forEach(t => {
+        const hour = new Date(t.date).getHours();
+        hourlyData[hour] += t.amount;
+      });
+      
+      return hourlyData.map((amount, hour) => ({
+        value: amount,
+        label: hour % 6 === 0 ? `${hour}:00` : '',
+        labelTextStyle: { color: Colors[theme].icon, fontSize: 10 },
+        frontColor: Colors[theme].tint,
+      }));
+    }
+    
+    if (filter === 'monthly') {
+      // Daily breakdown (1-31)
+      const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+      const dailyData = new Array(daysInMonth).fill(0);
+      
+      expenseTransactions.forEach(t => {
+        const day = new Date(t.date).getDate() - 1; // 0-indexed
+        if (day >= 0 && day < daysInMonth) {
+          dailyData[day] += t.amount;
+        }
+      });
+      
+      return dailyData.map((amount, index) => ({
+        value: amount,
+        label: (index + 1) % 5 === 0 || index === 0 ? `${index + 1}` : '',
+        labelTextStyle: { color: Colors[theme].icon, fontSize: 10 },
+        frontColor: Colors[theme].tint,
+      }));
+    }
+    
+    if (filter === 'yearly') {
+      // Monthly breakdown (0-11)
+      const monthlyData = new Array(12).fill(0);
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      
+      expenseTransactions.forEach(t => {
+        const month = new Date(t.date).getMonth();
+        monthlyData[month] += t.amount;
+      });
+      
+      return monthlyData.map((amount, index) => ({
+        value: amount,
+        label: months[index],
+        labelTextStyle: { color: Colors[theme].icon, fontSize: 10 },
+        frontColor: Colors[theme].tint,
+      }));
+    }
+
+    if (filter === 'custom') {
+      const start = new Date(dateRange.start);
+      const end = new Date(dateRange.end);
+      const diffTime = Math.abs(end.getTime() - start.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      // If range is short (<= 60 days), show daily breakdown
+      if (diffDays <= 60) {
+        const dailyMap = new Map<string, number>();
+        
+        // Initialize all days in range
+        for (let i = 0; i <= diffDays; i++) {
+            const d = new Date(start);
+            d.setDate(d.getDate() + i);
+            const key = d.toISOString().split('T')[0];
+            dailyMap.set(key, 0);
+        }
+
+        expenseTransactions.forEach(t => {
+            const key = t.date.split('T')[0];
+            if (dailyMap.has(key)) {
+                dailyMap.set(key, (dailyMap.get(key) || 0) + t.amount);
+            }
+        });
+
+        return Array.from(dailyMap.entries()).map(([dateStr, amount], index) => {
+            const d = new Date(dateStr);
+            return {
+                value: amount,
+                label: (index === 0 || index === diffDays || index % Math.ceil(diffDays / 5) === 0) ? `${d.getDate()}` : '',
+                labelTextStyle: { color: Colors[theme].icon, fontSize: 10 },
+                frontColor: Colors[theme].tint,
+            };
+        });
+      } else {
+        // Monthly breakdown for longer ranges
+        const monthlyMap = new Map<string, number>();
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+        expenseTransactions.forEach(t => {
+            const d = new Date(t.date);
+            const key = `${d.getFullYear()}-${d.getMonth()}`;
+            monthlyMap.set(key, (monthlyMap.get(key) || 0) + t.amount);
+        });
+
+        const sortedKeys = Array.from(monthlyMap.keys()).sort();
+
+        return sortedKeys.map((key) => {
+            const [year, month] = key.split('-').map(Number);
+            return {
+                value: monthlyMap.get(key) || 0,
+                label: `${months[month]}`,
+                labelTextStyle: { color: Colors[theme].icon, fontSize: 10 },
+                frontColor: Colors[theme].tint,
+            };
+        });
+      }
+    }
+    
+    return [];
+  };
+
+  const trendData = getTrendData();
+  const maxTrendValue = Math.max(...trendData.map(d => d.value), 100); // Default to 100 if no data to avoid scaling issues
+
   const expensesByCategory = expenseTransactions.reduce((acc, curr) => {
     acc[curr.category] = (acc[curr.category] || 0) + curr.amount;
     return acc;
@@ -46,14 +173,63 @@ export default function AnalyticsScreen() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
             <Text style={[styles.title, { color: Colors[theme].text }]}>Analytics</Text>
+            
+            <View style={styles.filterContainer}>
+              {filters.map((f) => (
+                <TouchableOpacity
+                  key={f}
+                  style={[
+                    styles.filterChip,
+                    filter === f 
+                      ? { backgroundColor: Colors[theme].tint } 
+                      : { backgroundColor: Colors[theme].border }
+                  ]}
+                  onPress={() => setFilter(f)}
+                >
+                  <Text style={[
+                    styles.filterText,
+                    filter === f 
+                      ? { color: theme === 'dark' ? Colors.light.text : '#fff' } 
+                      : { color: Colors[theme].text }
+                  ]}>
+                    {f.charAt(0).toUpperCase() + f.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <DateNavigator />
           </View>
 
-          {transactions.length === 0 ? (
+          {filteredTransactions.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={{ color: Colors[theme].icon }}>No data to display</Text>
             </View>
           ) : (
             <>
+              <View style={[styles.chartContainer, { backgroundColor: theme === 'dark' ? '#1f2937' : '#fff' }]}>
+                <Text style={[styles.chartTitle, { color: Colors[theme].text }]}>
+                  {filter === 'daily' ? 'Hourly Spending' : filter === 'monthly' ? 'Daily Spending' : 'Monthly Spending'}
+                </Text>
+                <BarChart
+                  data={trendData}
+                  barWidth={filter === 'daily' ? 8 : filter === 'monthly' ? 6 : 16}
+                  spacing={filter === 'daily' ? 4 : filter === 'monthly' ? 4 : 8}
+                  noOfSections={4}
+                  barBorderRadius={2}
+                  frontColor={Colors[theme].tint}
+                  yAxisThickness={0}
+                  xAxisThickness={0}
+                  yAxisTextStyle={{ color: Colors[theme].icon }}
+                  xAxisLabelTextStyle={{ color: Colors[theme].text }}
+                  width={300}
+                  height={150}
+                  maxValue={maxTrendValue * 1.2}
+                  hideRules
+                  isAnimated
+                />
+              </View>
+
               <View style={[styles.chartContainer, { backgroundColor: theme === 'dark' ? '#1f2937' : '#fff' }]}>
                 <Text style={[styles.chartTitle, { color: Colors[theme].text }]}>Income vs Expense</Text>
                 <BarChart
@@ -111,7 +287,7 @@ export default function AnalyticsScreen() {
                 <Text style={[styles.sectionTitle, { color: Colors[theme].text }]}>All Transactions</Text>
               </View>
 
-              {transactions.map((t) => (
+              {filteredTransactions.map((t) => (
                 <TransactionItem key={t.id} transaction={t} />
               ))}
             </>
@@ -132,6 +308,20 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 24,
+  },
+  filterContainer: {
+    flexDirection: 'row',
+    marginTop: 16,
+    gap: 8,
+  },
+  filterChip: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+  },
+  filterText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   title: {
     fontSize: 28,
