@@ -6,7 +6,9 @@ import { useTransactionStore, TransactionType } from '@/store/transactionStore';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Button } from '@/components/ui/Button';
-import { X } from 'lucide-react-native';
+import { X, Calendar as CalendarIcon } from 'lucide-react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { format } from 'date-fns';
 
 const INCOME_CATEGORIES = ['Salary', 'Freelance', 'Investment', 'Gift', 'Other'];
 const EXPENSE_CATEGORIES = ['Food', 'Transport', 'Housing', 'Utilities', 'Shopping', 'Entertainment', 'Health', 'Education', 'Other'];
@@ -23,6 +25,8 @@ export default function ModalScreen() {
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
+  const [date, setDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   React.useEffect(() => {
     if (isEditing) {
@@ -32,6 +36,7 @@ export default function ModalScreen() {
         setAmount(transaction.amount.toString());
         setCategory(transaction.category);
         setDescription(transaction.description);
+        setDate(new Date(transaction.date));
       }
     }
   }, [params.id, transactions]);
@@ -58,6 +63,7 @@ export default function ModalScreen() {
         category,
         description,
         type,
+        date: date.toISOString(),
       });
     } else {
       addTransaction({
@@ -65,11 +71,19 @@ export default function ModalScreen() {
         category,
         description,
         type,
-        date: new Date().toISOString(),
+        date: date.toISOString(),
       });
     }
 
     router.back();
+  };
+
+  const onDateChange = (event: any, selectedDate?: Date) => {
+    const currentDate = selectedDate || date;
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    setDate(currentDate);
   };
 
   return (
@@ -136,6 +150,38 @@ export default function ModalScreen() {
               onChangeText={setAmount}
               autoFocus
             />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: Colors[theme].text }]}>Date</Text>
+            <TouchableOpacity
+              style={[styles.dateButton, { borderColor: Colors[theme].border }]}
+              onPress={() => {
+                if (Platform.OS === 'ios') {
+                  setShowDatePicker(!showDatePicker);
+                } else {
+                  setShowDatePicker(true);
+                }
+              }}
+            >
+              <Text style={[styles.dateText, { color: Colors[theme].text }]}>
+                {format(date, 'MMMM dd, yyyy')}
+              </Text>
+              <CalendarIcon size={20} color={Colors[theme].icon} />
+            </TouchableOpacity>
+            
+            {showDatePicker && (
+              <DateTimePicker
+                testID="dateTimePicker"
+                value={date}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={onDateChange}
+                textColor={Colors[theme].text}
+                themeVariant={theme}
+                style={Platform.OS === 'ios' ? { width: '100%', marginTop: 10 } : undefined}
+              />
+            )}
           </View>
 
           <View style={styles.inputGroup}>
@@ -228,6 +274,16 @@ const styles = StyleSheet.create({
     fontSize: 18,
     paddingVertical: 12,
     borderBottomWidth: 1,
+  },
+  dateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  dateText: {
+    fontSize: 18,
   },
   categoriesContainer: {
     flexDirection: 'row',
