@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { StyleSheet, ScrollView, View, Text, TouchableOpacity, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useTransactionStore, FilterType } from '@/store/transactionStore';
+import { useTransactionStore } from '@/store/transactionStore';
 import { TransactionItem } from '@/components/ui/TransactionItem';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -15,15 +15,37 @@ export default function DashboardScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const theme = colorScheme ?? 'light';
-  const { transactions, filter, setFilter, getBalance, getIncome, getExpense, getFilteredTransactions, dateRange } = useTransactionStore();
+  const { transactions, filter, setFilter, getFilteredTransactions, dateRange, selectedDate } = useTransactionStore();
 
-  const balance = getBalance();
-  const income = getIncome();
-  const expense = getExpense();
-  const filteredTransactions = getFilteredTransactions();
+  useEffect(() => {
+    if (filter !== 'monthly') {
+      setFilter('monthly');
+    }
+  }, [filter, setFilter]);
+
+  const filteredTransactions = useMemo(() => {
+    return getFilteredTransactions();
+  }, [transactions, filter, selectedDate, dateRange]);
+
+  const balance = useMemo(() => {
+    return filteredTransactions.reduce((acc, curr) => {
+      return curr.type === 'income' ? acc + curr.amount : acc - curr.amount;
+    }, 0);
+  }, [filteredTransactions]);
+
+  const income = useMemo(() => {
+    return filteredTransactions
+      .filter((t) => t.type === 'income')
+      .reduce((acc, curr) => acc + curr.amount, 0);
+  }, [filteredTransactions]);
+
+  const expense = useMemo(() => {
+    return filteredTransactions
+      .filter((t) => t.type === 'expense')
+      .reduce((acc, curr) => acc + curr.amount, 0);
+  }, [filteredTransactions]);
+
   const recentTransactions = filteredTransactions.slice(0, 5);
-
-  const filters: FilterType[] = ['daily', 'monthly', 'yearly', 'custom'];
 
   return (
     <View style={[styles.container, { backgroundColor: Colors[theme].background }]}>
@@ -32,30 +54,6 @@ export default function DashboardScreen() {
           <View style={styles.header}>
             <Text style={[styles.greeting, { color: Colors[theme].text }]}>Financial Overview</Text>
             
-            <View style={styles.filterContainer}>
-              {filters.map((f) => (
-                <TouchableOpacity
-                  key={f}
-                  style={[
-                    styles.filterChip,
-                    filter === f 
-                      ? { backgroundColor: Colors[theme].tint } 
-                      : { backgroundColor: Colors[theme].border }
-                  ]}
-                  onPress={() => setFilter(f)}
-                >
-                  <Text style={[
-                    styles.filterText,
-                    filter === f 
-                      ? { color: theme === 'dark' ? Colors.light.text : '#fff' } 
-                      : { color: Colors[theme].text }
-                  ]}>
-                    {f.charAt(0).toUpperCase() + f.slice(1)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
             <DateNavigator />
           </View>
 

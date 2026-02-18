@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { StyleSheet, ScrollView, View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PieChart, BarChart } from 'react-native-gifted-charts';
-import { useTransactionStore, FilterType } from '@/store/transactionStore';
+import { useTransactionStore } from '@/store/transactionStore';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { formatCurrency } from '@/utils/format';
@@ -13,12 +13,29 @@ import { DateNavigator } from '@/components/DateNavigator';
 export default function AnalyticsScreen() {
   const colorScheme = useColorScheme();
   const theme = colorScheme ?? 'light';
-  const { transactions, filter, setFilter, getIncome, getExpense, getFilteredTransactions, selectedDate, dateRange } = useTransactionStore();
+  const { transactions, filter, setFilter, getFilteredTransactions, selectedDate, dateRange } = useTransactionStore();
 
-  const income = getIncome();
-  const expense = getExpense();
-  const filteredTransactions = getFilteredTransactions();
-  const filters: FilterType[] = ['daily', 'monthly', 'yearly', 'custom'];
+  useEffect(() => {
+    if (filter !== 'monthly') {
+      setFilter('monthly');
+    }
+  }, [filter, setFilter]);
+
+  const filteredTransactions = useMemo(() => {
+    return getFilteredTransactions();
+  }, [transactions, filter, selectedDate, dateRange]);
+
+  const income = useMemo(() => {
+    return filteredTransactions
+      .filter((t) => t.type === 'income')
+      .reduce((acc, curr) => acc + curr.amount, 0);
+  }, [filteredTransactions]);
+
+  const expense = useMemo(() => {
+    return filteredTransactions
+      .filter((t) => t.type === 'expense')
+      .reduce((acc, curr) => acc + curr.amount, 0);
+  }, [filteredTransactions]);
 
   // Prepare Pie Chart Data (Expenses by Category)
   const expenseTransactions = filteredTransactions.filter(t => t.type === 'expense');
@@ -80,9 +97,19 @@ export default function AnalyticsScreen() {
       }));
     }
 
-    if (filter === 'custom') {
-      const start = new Date(dateRange.start);
-      const end = new Date(dateRange.end);
+    if (filter === 'custom' || filter === 'all') {
+      let start: Date, end: Date;
+
+      if (filter === 'custom') {
+        start = new Date(dateRange.start);
+        end = new Date(dateRange.end);
+      } else {
+        if (expenseTransactions.length === 0) return [];
+        const timestamps = expenseTransactions.map(t => new Date(t.date).getTime());
+        start = new Date(Math.min(...timestamps));
+        end = new Date(Math.max(...timestamps));
+      }
+
       const diffTime = Math.abs(end.getTime() - start.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -174,30 +201,6 @@ export default function AnalyticsScreen() {
           <View style={styles.header}>
             <Text style={[styles.title, { color: Colors[theme].text }]}>Analytics</Text>
             
-            <View style={styles.filterContainer}>
-              {filters.map((f) => (
-                <TouchableOpacity
-                  key={f}
-                  style={[
-                    styles.filterChip,
-                    filter === f 
-                      ? { backgroundColor: Colors[theme].tint } 
-                      : { backgroundColor: Colors[theme].border }
-                  ]}
-                  onPress={() => setFilter(f)}
-                >
-                  <Text style={[
-                    styles.filterText,
-                    filter === f 
-                      ? { color: theme === 'dark' ? Colors.light.text : '#fff' } 
-                      : { color: Colors[theme].text }
-                  ]}>
-                    {f.charAt(0).toUpperCase() + f.slice(1)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
             <DateNavigator />
           </View>
 

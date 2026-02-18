@@ -3,7 +3,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type TransactionType = 'income' | 'expense';
-export type FilterType = 'daily' | 'monthly' | 'yearly' | 'custom';
+export type FilterType = 'daily' | 'monthly' | 'yearly' | 'custom' | 'all';
 
 export interface Transaction {
   id: string;
@@ -102,6 +102,10 @@ export const useTransactionStore = create<TransactionState>()(
         return transactions.filter((t) => {
           const tDate = new Date(t.date);
           
+          if (filter === 'all') {
+            return true;
+          }
+
           if (filter === 'daily') {
             return tDate.getDate() === now.getDate() &&
                    tDate.getMonth() === now.getMonth() &&

@@ -88,43 +88,62 @@ export function DateNavigator() {
     return '';
   };
 
-  if (filter !== 'custom') {
+  if (filter === 'all') {
     return null;
+  }
+
+  if (filter === 'custom') {
+    return (
+      <View style={styles.container}>
+        <TouchableOpacity onPress={toggleStartPicker} style={[styles.dateContainer, { backgroundColor: theme === 'dark' ? '#374151' : '#f3f4f6', minWidth: 120 }]}>
+          <Text style={[styles.dateLabel, { color: Colors[theme].icon }]}>Start</Text>
+          <Text style={[styles.dateText, { color: Colors[theme].text }]}>{format(startDate, 'MMM d, yyyy')}</Text>
+        </TouchableOpacity>
+  
+        <Text style={{ color: Colors[theme].text }}>-</Text>
+  
+        <TouchableOpacity onPress={toggleEndPicker} style={[styles.dateContainer, { backgroundColor: theme === 'dark' ? '#374151' : '#f3f4f6', minWidth: 120 }]}>
+          <Text style={[styles.dateLabel, { color: Colors[theme].icon }]}>End</Text>
+          <Text style={[styles.dateText, { color: Colors[theme].text }]}>{format(endDate, 'MMM d, yyyy')}</Text>
+        </TouchableOpacity>
+  
+        {showStartPicker && (
+          <DateTimePicker
+            value={startDate}
+            mode={'date'}
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={onStartChange}
+            themeVariant={theme}
+          />
+        )}
+  
+        {showEndPicker && (
+          <DateTimePicker
+            value={endDate}
+            mode={'date'}
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={onEndChange}
+            themeVariant={theme}
+          />
+        )}
+      </View>
+    );
   }
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity onPress={toggleStartPicker} style={[styles.dateContainer, { backgroundColor: theme === 'dark' ? '#374151' : '#f3f4f6', minWidth: 120 }]}>
-        <Text style={[styles.dateLabel, { color: Colors[theme].icon }]}>Start</Text>
-        <Text style={[styles.dateText, { color: Colors[theme].text }]}>{format(startDate, 'MMM d, yyyy')}</Text>
+      <TouchableOpacity onPress={() => navigate(-1)} style={styles.button}>
+        <ChevronLeft size={24} color={Colors[theme].text} />
       </TouchableOpacity>
+      
+      <View style={[styles.dateContainer, { backgroundColor: theme === 'dark' ? '#374151' : '#f3f4f6' }]}>
+        <Calendar size={16} color={Colors[theme].icon} style={{ marginRight: 8 }} />
+        <Text style={[styles.dateText, { color: Colors[theme].text }]}>{formatDate()}</Text>
+      </View>
 
-      <Text style={{ color: Colors[theme].text }}>-</Text>
-
-      <TouchableOpacity onPress={toggleEndPicker} style={[styles.dateContainer, { backgroundColor: theme === 'dark' ? '#374151' : '#f3f4f6', minWidth: 120 }]}>
-        <Text style={[styles.dateLabel, { color: Colors[theme].icon }]}>End</Text>
-        <Text style={[styles.dateText, { color: Colors[theme].text }]}>{format(endDate, 'MMM d, yyyy')}</Text>
+      <TouchableOpacity onPress={() => navigate(1)} style={styles.button}>
+        <ChevronRight size={24} color={Colors[theme].text} />
       </TouchableOpacity>
-
-      {showStartPicker && (
-        <DateTimePicker
-          value={startDate}
-          mode={'date'}
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={onStartChange}
-          themeVariant={theme}
-        />
-      )}
-
-      {showEndPicker && (
-        <DateTimePicker
-          value={endDate}
-          mode={'date'}
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={onEndChange}
-          themeVariant={theme}
-        />
-      )}
     </View>
   );
 }
