@@ -21,7 +21,12 @@ export default function RootLayout() {
           <Stack.Screen name="modal" options={{ 
             presentation: 'modal', 
             headerShown: false,
-            animation: 'slide_from_bottom', // Enhance animation smoothness
+            animation: 'slide_from_bottom',
+            gestureEnabled: true,
+            gestureDirection: 'vertical',
+            contentStyle: {
+              backgroundColor: 'transparent'
+            }
           }} />
         </Stack>
         <StatusBar style="auto" />
