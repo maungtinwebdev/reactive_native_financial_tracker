@@ -6,7 +6,7 @@ import { useTransactionStore } from '@/store/transactionStore';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { formatCurrency } from '@/utils/format';
-import { format } from 'date-fns';
+import { format, isSameDay, isSameYear, startOfYear, endOfYear, eachMonthOfInterval, isWithinInterval } from 'date-fns';
 
 export default function AnalyticsScreen() {
   const colorScheme = useColorScheme();
@@ -16,16 +16,41 @@ export default function AnalyticsScreen() {
 
   // Filter Logic Based on Range
   const groupedTransactions = useMemo(() => {
-    const sorted = [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const now = new Date();
+    
+    // Filter transactions based on range
+    const filtered = transactions.filter(t => {
+      const date = new Date(t.date);
+      if (range === 'daily') {
+        return isSameDay(date, now);
+      }
+      if (range === 'monthly') {
+        return isSameYear(date, now);
+      }
+      if (range === 'yearly') {
+        // "Yearly mean current year" - User requested current year for yearly too.
+        // But usually yearly means comparison of years. 
+        // If we strictly follow "current year", it's just one data point (2025).
+        // Let's assume they want to see the yearly summary OF the current year.
+        return isSameYear(date, now);
+      }
+      return true;
+    });
+
+    const sorted = [...filtered].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     
     // Grouping key format based on range
     const getGroupKey = (date: Date) => {
-      if (range === 'daily') return format(date, 'MMM dd');
+      if (range === 'daily') return format(date, 'h a'); // Group by hour for daily view
+      if (range === 'monthly') return format(date, 'MMM'); // Group by month name
       if (range === 'yearly') return format(date, 'yyyy');
-      return format(date, 'MMMM yyyy'); // default monthly
+      return format(date, 'MMMM yyyy');
     };
 
     const groups = new Map<string, typeof transactions>();
+    
+    // Initialize groups to ensure continuous axis (optional, but good for charts)
+    // For now, let's just group existing data to match previous logic style
     
     sorted.forEach(t => {
       const date = new Date(t.date);
@@ -66,9 +91,9 @@ export default function AnalyticsScreen() {
     recentGroups.forEach(group => {
       // Label formatting
       let label = group.title;
-      if (range === 'monthly') label = group.title.split(' ')[0].substring(0, 3);
-      if (range === 'daily') label = group.title.split(' ')[1]; // Just the day number if "MMM dd"
-
+      // if (range === 'monthly') label = group.title.split(' ')[0].substring(0, 3);
+      // if (range === 'daily') label = group.title.split(' ')[1]; // Just the day number if "MMM dd"
+      
       income.push({
         value: group.income,
         label: label,
@@ -81,6 +106,11 @@ export default function AnalyticsScreen() {
         dataPointText: '',
       });
     });
+
+    // Add empty state if needed for better visualization
+    if (range === 'daily' && recentGroups.length === 0) {
+      // Show empty hours? Or just empty.
+    }
 
     const maxVal = Math.max(
       ...income.map(d => d.value),
@@ -129,9 +159,9 @@ export default function AnalyticsScreen() {
     : 0;
   
   const getRangeLabel = () => {
-    if (range === 'daily') return 'Daily';
-    if (range === 'yearly') return 'Yearly';
-    return 'Monthly';
+    if (range === 'daily') return 'Today\'s';
+    if (range === 'yearly') return 'This Year\'s';
+    return 'This Year\'s Monthly';
   };
 
   return (
@@ -212,7 +242,7 @@ export default function AnalyticsScreen() {
                   data2={expenseData}
                   height={220}
                   showVerticalLines
-                  spacing={44}
+                  spacing={range === 'daily' ? 60 : 44}
                   initialSpacing={20}
                   color1="#4ade80"
                   color2="#f87171"
