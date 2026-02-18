@@ -1,298 +1,277 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { StyleSheet, ScrollView, View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { PieChart, BarChart } from 'react-native-gifted-charts';
+import { PieChart, LineChart } from 'react-native-gifted-charts';
 import { useTransactionStore } from '@/store/transactionStore';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { formatCurrency } from '@/utils/format';
-import { TransactionItem } from '@/components/ui/TransactionItem';
-
-import { DateNavigator } from '@/components/DateNavigator';
+import { format } from 'date-fns';
 
 export default function AnalyticsScreen() {
   const colorScheme = useColorScheme();
   const theme = colorScheme ?? 'light';
-  const { transactions, filter, setFilter, getFilteredTransactions, selectedDate, dateRange } = useTransactionStore();
+  const { transactions } = useTransactionStore();
+  const [range, setRange] = useState<'daily' | 'monthly' | 'yearly'>('monthly');
 
-  useEffect(() => {
-    if (filter !== 'monthly') {
-      setFilter('monthly');
-    }
-  }, [filter, setFilter]);
-
-  const filteredTransactions = useMemo(() => {
-    return getFilteredTransactions();
-  }, [transactions, filter, selectedDate, dateRange]);
-
-  const income = useMemo(() => {
-    return filteredTransactions
-      .filter((t) => t.type === 'income')
-      .reduce((acc, curr) => acc + curr.amount, 0);
-  }, [filteredTransactions]);
-
-  const expense = useMemo(() => {
-    return filteredTransactions
-      .filter((t) => t.type === 'expense')
-      .reduce((acc, curr) => acc + curr.amount, 0);
-  }, [filteredTransactions]);
-
-  // Prepare Pie Chart Data (Expenses by Category)
-  const expenseTransactions = filteredTransactions.filter(t => t.type === 'expense');
-  
-  // Prepare Trend Data (Expenses over time)
-  const getTrendData = () => {
-    const date = new Date(selectedDate);
-    if (filter === 'daily') {
-      // Hourly breakdown (0-23)
-      const hourlyData = new Array(24).fill(0);
-      expenseTransactions.forEach(t => {
-        const hour = new Date(t.date).getHours();
-        hourlyData[hour] += t.amount;
-      });
-      
-      return hourlyData.map((amount, hour) => ({
-        value: amount,
-        label: hour % 6 === 0 ? `${hour}:00` : '',
-        labelTextStyle: { color: Colors[theme].icon, fontSize: 10 },
-        frontColor: Colors[theme].tint,
-      }));
-    }
+  // Filter Logic Based on Range
+  const groupedTransactions = useMemo(() => {
+    const sorted = [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     
-    if (filter === 'monthly') {
-      // Daily breakdown (1-31)
-      const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-      const dailyData = new Array(daysInMonth).fill(0);
-      
-      expenseTransactions.forEach(t => {
-        const day = new Date(t.date).getDate() - 1; // 0-indexed
-        if (day >= 0 && day < daysInMonth) {
-          dailyData[day] += t.amount;
-        }
-      });
-      
-      return dailyData.map((amount, index) => ({
-        value: amount,
-        label: (index + 1) % 5 === 0 || index === 0 ? `${index + 1}` : '',
-        labelTextStyle: { color: Colors[theme].icon, fontSize: 10 },
-        frontColor: Colors[theme].tint,
-      }));
-    }
-    
-    if (filter === 'yearly') {
-      // Monthly breakdown (0-11)
-      const monthlyData = new Array(12).fill(0);
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      
-      expenseTransactions.forEach(t => {
-        const month = new Date(t.date).getMonth();
-        monthlyData[month] += t.amount;
-      });
-      
-      return monthlyData.map((amount, index) => ({
-        value: amount,
-        label: months[index],
-        labelTextStyle: { color: Colors[theme].icon, fontSize: 10 },
-        frontColor: Colors[theme].tint,
-      }));
-    }
-
-    if (filter === 'custom' || filter === 'all') {
-      let start: Date, end: Date;
-
-      if (filter === 'custom') {
-        start = new Date(dateRange.start);
-        end = new Date(dateRange.end);
-      } else {
-        if (expenseTransactions.length === 0) return [];
-        const timestamps = expenseTransactions.map(t => new Date(t.date).getTime());
-        start = new Date(Math.min(...timestamps));
-        end = new Date(Math.max(...timestamps));
-      }
-
-      const diffTime = Math.abs(end.getTime() - start.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-      // If range is short (<= 60 days), show daily breakdown
-      if (diffDays <= 60) {
-        const dailyMap = new Map<string, number>();
-        
-        // Initialize all days in range
-        for (let i = 0; i <= diffDays; i++) {
-            const d = new Date(start);
-            d.setDate(d.getDate() + i);
-            const key = d.toISOString().split('T')[0];
-            dailyMap.set(key, 0);
-        }
-
-        expenseTransactions.forEach(t => {
-            const key = t.date.split('T')[0];
-            if (dailyMap.has(key)) {
-                dailyMap.set(key, (dailyMap.get(key) || 0) + t.amount);
-            }
-        });
-
-        return Array.from(dailyMap.entries()).map(([dateStr, amount], index) => {
-            const d = new Date(dateStr);
-            return {
-                value: amount,
-                label: (index === 0 || index === diffDays || index % Math.ceil(diffDays / 5) === 0) ? `${d.getDate()}` : '',
-                labelTextStyle: { color: Colors[theme].icon, fontSize: 10 },
-                frontColor: Colors[theme].tint,
-            };
-        });
-      } else {
-        // Monthly breakdown for longer ranges
-        const monthlyMap = new Map<string, number>();
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-        expenseTransactions.forEach(t => {
-            const d = new Date(t.date);
-            const key = `${d.getFullYear()}-${d.getMonth()}`;
-            monthlyMap.set(key, (monthlyMap.get(key) || 0) + t.amount);
-        });
-
-        const sortedKeys = Array.from(monthlyMap.keys()).sort();
-
-        return sortedKeys.map((key) => {
-            const [year, month] = key.split('-').map(Number);
-            return {
-                value: monthlyMap.get(key) || 0,
-                label: `${months[month]}`,
-                labelTextStyle: { color: Colors[theme].icon, fontSize: 10 },
-                frontColor: Colors[theme].tint,
-            };
-        });
-      }
-    }
-    
-    return [];
-  };
-
-  const trendData = getTrendData();
-  const maxTrendValue = Math.max(...trendData.map(d => d.value), 100); // Default to 100 if no data to avoid scaling issues
-
-  const expensesByCategory = expenseTransactions.reduce((acc, curr) => {
-    acc[curr.category] = (acc[curr.category] || 0) + curr.amount;
-    return acc;
-  }, {} as Record<string, number>);
-
-  const pieData = Object.keys(expensesByCategory).map((category, index) => {
-    const colors = ['#f87171', '#fb923c', '#facc15', '#a3e635', '#4ade80', '#22d3ee', '#818cf8', '#c084fc', '#e879f9'];
-    return {
-      value: expensesByCategory[category],
-      color: colors[index % colors.length],
-      text: category,
-      shiftTextX: 10,
-      shiftTextY: 10,
+    // Grouping key format based on range
+    const getGroupKey = (date: Date) => {
+      if (range === 'daily') return format(date, 'MMM dd');
+      if (range === 'yearly') return format(date, 'yyyy');
+      return format(date, 'MMMM yyyy'); // default monthly
     };
-  });
 
-  // Prepare Bar Chart Data (Income vs Expense)
-  const barData = [
-    { value: income, label: 'Income', frontColor: '#4ade80' },
-    { value: expense, label: 'Expense', frontColor: '#f87171' },
-  ];
+    const groups = new Map<string, typeof transactions>();
+    
+    sorted.forEach(t => {
+      const date = new Date(t.date);
+      const key = getGroupKey(date);
+      if (!groups.has(key)) {
+        groups.set(key, []);
+      }
+      groups.get(key)!.push(t);
+    });
+    
+    return Array.from(groups.entries()).map(([key, items]) => {
+      const groupIncome = items
+        .filter(t => (t.type || '').toLowerCase() === 'income')
+        .reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+        
+      const groupExpense = items
+        .filter(t => (t.type || '').toLowerCase() === 'expense')
+        .reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+        
+      return {
+        title: key,
+        data: items,
+        income: groupIncome,
+        expense: groupExpense,
+        balance: groupIncome - groupExpense
+      };
+    });
+  }, [transactions, range]);
+
+  // Prepare Trend Data (Dynamic based on range)
+  const { incomeData, expenseData, maxMonthlyValue } = useMemo(() => {
+    // Show all available data for the selected range, but reverse to show oldest to newest
+    const recentGroups = [...groupedTransactions].reverse();
+    
+    const income: any[] = [];
+    const expense: any[] = [];
+    
+    recentGroups.forEach(group => {
+      // Label formatting
+      let label = group.title;
+      if (range === 'monthly') label = group.title.split(' ')[0].substring(0, 3);
+      if (range === 'daily') label = group.title.split(' ')[1]; // Just the day number if "MMM dd"
+
+      income.push({
+        value: group.income,
+        label: label,
+        labelTextStyle: { color: Colors[theme].icon, fontSize: 10 },
+        dataPointText: '',
+      });
+      
+      expense.push({
+        value: group.expense,
+        dataPointText: '',
+      });
+    });
+
+    const maxVal = Math.max(
+      ...income.map(d => d.value),
+      ...expense.map(d => d.value),
+      100
+    );
+    
+    return { incomeData: income, expenseData: expense, maxMonthlyValue: maxVal };
+  }, [groupedTransactions, theme, range]);
+
+  // Prepare Category Data (All Time for selected range view)
+  const { categoryData, totalExpense } = useMemo(() => {
+    // Use all groups for the pie chart too
+    const expenses = groupedTransactions.flatMap(group => 
+      group.data.filter(t => (t.type || '').toLowerCase() === 'expense')
+    );
+
+    const total = expenses.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+
+    const byCategory = expenses.reduce((acc, curr) => {
+      acc[curr.category] = (acc[curr.category] || 0) + (Number(curr.amount) || 0);
+      return acc;
+    }, {} as Record<string, number>);
+    
+    const colors = ['#f87171', '#fb923c', '#facc15', '#a3e635', '#4ade80', '#22d3ee', '#818cf8', '#c084fc', '#e879f9'];
+    
+    const data = Object.keys(byCategory).map((cat, index) => ({
+      value: byCategory[cat],
+      color: colors[index % colors.length],
+      text: cat,
+      // Simplify visuals for cleaner look
+    })).sort((a, b) => b.value - a.value); // Sort by biggest expense
+
+    return { categoryData: data, totalExpense: total };
+  }, [groupedTransactions, range]);
+
+  // Calculate Insights
+  const totalIncome = incomeData.reduce((acc, curr) => acc + curr.value, 0);
+  const totalExpenseVal = expenseData.reduce((acc, curr) => acc + curr.value, 0);
+  const savingsRate = totalIncome > 0 
+    ? ((totalIncome - totalExpenseVal) / totalIncome) * 100 
+    : 0;
+  
+  const getRangeLabel = () => {
+    if (range === 'daily') return 'Daily';
+    if (range === 'yearly') return 'Yearly';
+    return 'Monthly';
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: Colors[theme].background }]}>
       <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
-            <Text style={[styles.title, { color: Colors[theme].text }]}>Analytics</Text>
-            
-            <DateNavigator />
+            <Text style={[styles.title, { color: Colors[theme].text }]}>Financial Overview</Text>
+            <Text style={[styles.subtitle, { color: Colors[theme].icon }]}>{getRangeLabel()} Performance</Text>
           </View>
 
-          {filteredTransactions.length === 0 ? (
+          {/* Range Filter */}
+          <View style={styles.filterContainer}>
+            {(['daily', 'monthly', 'yearly'] as const).map((r) => (
+              <TouchableOpacity
+                key={r}
+                style={[
+                  styles.filterButton,
+                  range === r && { backgroundColor: theme === 'dark' ? '#fff' : '#000' }
+                ]}
+                onPress={() => setRange(r)}
+              >
+                <Text style={[
+                  styles.filterText,
+                  { color: range === r ? (theme === 'dark' ? '#000' : '#fff') : Colors[theme].icon }
+                ]}>
+                  {r.charAt(0).toUpperCase() + r.slice(1)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Summary Cards */}
+          <View style={styles.summaryContainer}>
+            <View style={[styles.summaryCard, { backgroundColor: theme === 'dark' ? '#1c1c1e' : '#fff' }]}>
+              <Text style={styles.summaryLabel}>Total Income</Text>
+              <Text style={[styles.summaryValue, { color: '#4ade80' }]}>{formatCurrency(totalIncome)}</Text>
+            </View>
+            <View style={[styles.summaryCard, { backgroundColor: theme === 'dark' ? '#1c1c1e' : '#fff' }]}>
+              <Text style={styles.summaryLabel}>Total Expense</Text>
+              <Text style={[styles.summaryValue, { color: '#f87171' }]}>{formatCurrency(totalExpenseVal)}</Text>
+            </View>
+          </View>
+
+          <View style={[styles.summaryCard, { backgroundColor: theme === 'dark' ? '#1c1c1e' : '#fff', marginBottom: 24 }]}>
+             <Text style={styles.summaryLabel}>Net Savings Rate</Text>
+             <Text style={[styles.summaryValue, { color: savingsRate >= 0 ? '#4ade80' : '#f87171' }]}>
+               {savingsRate.toFixed(1)}%
+             </Text>
+             <Text style={[styles.summarySubtext, { color: Colors[theme].icon }]}>
+               {savingsRate > 20 ? "Great job! You're saving well." : "Try to reduce expenses to save more."}
+             </Text>
+          </View>
+
+          {groupedTransactions.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={{ color: Colors[theme].icon }}>No data to display</Text>
+              <Text style={{ color: Colors[theme].icon }}>No transactions yet</Text>
             </View>
           ) : (
             <>
-              <View style={[styles.chartContainer, { backgroundColor: theme === 'dark' ? '#1f2937' : '#fff' }]}>
-                <Text style={[styles.chartTitle, { color: Colors[theme].text }]}>
-                  {filter === 'daily' ? 'Hourly Spending' : filter === 'monthly' ? 'Daily Spending' : 'Monthly Spending'}
-                </Text>
-                <BarChart
-                  data={trendData}
-                  barWidth={filter === 'daily' ? 8 : filter === 'monthly' ? 6 : 16}
-                  spacing={filter === 'daily' ? 4 : filter === 'monthly' ? 4 : 8}
-                  noOfSections={4}
-                  barBorderRadius={2}
-                  frontColor={Colors[theme].tint}
-                  yAxisThickness={0}
-                  xAxisThickness={0}
-                  yAxisTextStyle={{ color: Colors[theme].icon }}
-                  xAxisLabelTextStyle={{ color: Colors[theme].text }}
-                  width={300}
-                  height={150}
-                  maxValue={maxTrendValue * 1.2}
-                  hideRules
-                  isAnimated
-                />
-              </View>
-
-              <View style={[styles.chartContainer, { backgroundColor: theme === 'dark' ? '#1f2937' : '#fff' }]}>
+              {/* Monthly Trend Chart */}
+              <View style={[styles.chartContainer, { backgroundColor: theme === 'dark' ? '#1c1c1e' : '#fff' }]}>
                 <Text style={[styles.chartTitle, { color: Colors[theme].text }]}>Income vs Expense</Text>
-                <BarChart
-                  data={barData}
-                  barWidth={50}
-                  noOfSections={4}
-                  barBorderRadius={4}
-                  frontColor={Colors[theme].tint}
-                  yAxisThickness={0}
-                  xAxisThickness={0}
-                  yAxisTextStyle={{ color: Colors[theme].icon }}
-                  xAxisLabelTextStyle={{ color: Colors[theme].text }}
-                  width={300}
-                  height={200}
+                <LineChart
+                  data={incomeData}
+                  data2={expenseData}
+                  height={220}
+                  showVerticalLines
+                  spacing={44}
+                  initialSpacing={20}
+                  color1="#4ade80"
+                  color2="#f87171"
+                  textColor1="#4ade80"
+                  textColor2="#f87171"
+                  dataPointsHeight={6}
+                  dataPointsWidth={6}
+                  dataPointsColor1="#4ade80"
+                  dataPointsColor2="#f87171"
+                  textShiftY={-2}
+                  textFontSize={10}
+                  thickness={3}
+                  hideRules
+                  yAxisColor="transparent"
+                  xAxisColor="transparent"
+                  yAxisTextStyle={{ color: Colors[theme].icon, fontSize: 10 }}
+                  verticalLinesColor={theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}
+                  xAxisLabelTextStyle={{ color: Colors[theme].icon, fontSize: 10 }}
+                  curved
                   isAnimated
+                  startFillColor1="#4ade80"
+                  endFillColor1="#4ade80"
+                  startOpacity1={0.2}
+                  endOpacity1={0.0}
+                  areaChart // Makes it an area chart with gradient fill
                 />
+                <View style={styles.legendContainer}>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendColor, { backgroundColor: '#4ade80' }]} />
+                    <Text style={[styles.legendText, { color: Colors[theme].text }]}>Income</Text>
+                  </View>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendColor, { backgroundColor: '#f87171' }]} />
+                    <Text style={[styles.legendText, { color: Colors[theme].text }]}>Expense</Text>
+                  </View>
+                </View>
               </View>
 
-              {expenseTransactions.length > 0 && (
-                <View style={[styles.chartContainer, { backgroundColor: theme === 'dark' ? '#1f2937' : '#fff' }]}>
-                  <Text style={[styles.chartTitle, { color: Colors[theme].text }]}>Expenses by Category</Text>
+              {/* Category Pie Chart */}
+              {categoryData.length > 0 && (
+                <View style={[styles.chartContainer, { backgroundColor: theme === 'dark' ? '#1c1c1e' : '#fff' }]}>
+                  <Text style={[styles.chartTitle, { color: Colors[theme].text }]}>Spending Distribution</Text>
                   <View style={{ alignItems: 'center' }}>
                     <PieChart
-                      data={pieData}
+                      data={categoryData}
                       donut
-                      showText
-                      textColor={Colors[theme].text}
-                      radius={120}
-                      innerRadius={60}
-                      textSize={12}
+                      radius={140}
                       focusOnPress
-                      showValuesAsLabels
-                      showTextBackground
-                      textBackgroundRadius={20}
+                      showValuesAsLabels={false}
+                      showTextBackground={false} // Clean look
+                      innerRadius={80} // Larger hole for cleaner donut
+                      centerLabelComponent={() => {
+                        return (
+                          <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+                            <Text style={{ fontSize: 12, color: Colors[theme].icon }}>Total</Text>
+                            <Text style={{ fontSize: 18, color: Colors[theme].text, fontWeight: 'bold' }}>
+                              {formatCurrency(totalExpense)}
+                            </Text>
+                          </View>
+                        );
+                      }}
                     />
                   </View>
                   <View style={styles.legendContainer}>
-                    {Object.keys(expensesByCategory).map((category, index) => {
-                       const colors = ['#f87171', '#fb923c', '#facc15', '#a3e635', '#4ade80', '#22d3ee', '#818cf8', '#c084fc', '#e879f9'];
-                       const color = colors[index % colors.length];
-                       return (
-                        <View key={index} style={styles.legendItem}>
-                          <View style={[styles.legendColor, { backgroundColor: color }]} />
-                          <Text style={[styles.legendText, { color: Colors[theme].text }]}>
-                            {category} ({formatCurrency(expensesByCategory[category])})
-                          </Text>
-                        </View>
-                       );
-                    })}
+                    {categoryData.map((item, index) => (
+                      <View key={index} style={styles.legendItem}>
+                        <View style={[styles.legendColor, { backgroundColor: item.color }]} />
+                        <Text style={[styles.legendText, { color: Colors[theme].text }]}>
+                           {item.text} ({((item.value / totalExpense) * 100).toFixed(0)}%)
+                        </Text>
+                      </View>
+                    ))}
                   </View>
                 </View>
               )}
-
-              <View style={styles.sectionHeader}>
-                <Text style={[styles.sectionTitle, { color: Colors[theme].text }]}>All Transactions</Text>
-              </View>
-
-              {filteredTransactions.map((t) => (
-                <TransactionItem key={t.id} transaction={t} />
-              ))}
             </>
           )}
         </ScrollView>
@@ -310,25 +289,64 @@ const styles = StyleSheet.create({
     paddingBottom: 80,
   },
   header: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   filterContainer: {
     flexDirection: 'row',
-    marginTop: 16,
-    gap: 8,
+    marginBottom: 20,
+    backgroundColor: 'rgba(118, 118, 128, 0.12)',
+    padding: 2,
+    borderRadius: 8,
   },
-  filterChip: {
+  filterButton: {
+    flex: 1,
     paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 6,
   },
   filterText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '500',
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
+  },
+  subtitle: {
+    fontSize: 14,
+    marginTop: 4,
+  },
+  summaryContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 12,
+  },
+  summaryCard: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+    justifyContent: 'center',
+  },
+  summaryLabel: {
+    fontSize: 12,
+    color: '#888',
+    marginBottom: 4,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  summaryValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  summarySubtext: {
+    fontSize: 12,
+    marginTop: 4,
   },
   chartContainer: {
     borderRadius: 16,
@@ -343,7 +361,7 @@ const styles = StyleSheet.create({
   chartTitle: {
     fontSize: 18,
     fontWeight: '600',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   emptyState: {
     padding: 24,
@@ -351,32 +369,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 40,
   },
-  sectionHeader: {
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
   legendContainer: {
-    marginTop: 20,
+    marginTop: 24,
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
+    justifyContent: 'center',
   },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 8,
     marginBottom: 8,
   },
   legendColor: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 8,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 6,
   },
   legendText: {
     fontSize: 12,
+    fontWeight: '500',
   },
 });

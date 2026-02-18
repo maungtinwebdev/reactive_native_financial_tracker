@@ -10,6 +10,7 @@ import { formatCurrency } from '@/utils/format';
 import { Plus } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { DateNavigator } from '@/components/DateNavigator';
+import { format } from 'date-fns';
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -221,5 +222,47 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 8,
     zIndex: 100,
+  },
+  // New styles for grouped list
+  groupContainer: {
+    marginBottom: 24,
+  },
+  groupTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 12,
+    marginLeft: 4,
+    opacity: 0.8,
+  },
+  groupFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  footerItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  footerLabel: {
+    fontSize: 10,
+    color: '#888',
+    marginBottom: 2,
+    textTransform: 'uppercase',
+  },
+  incomeAmountSmall: {
+    color: '#4ade80',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  expenseAmountSmall: {
+    color: '#f87171',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  balanceTextSmall: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
