@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { StyleSheet, ScrollView, View, Text } from 'react-native';
+import React, { useMemo, useEffect } from 'react';
+import { StyleSheet, SectionList, View, Text, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTransactionStore } from '@/store/transactionStore';
 import { Colors } from '@/constants/Colors';
@@ -8,10 +8,20 @@ import { formatCurrency } from '@/utils/format';
 import { TransactionItem } from '@/components/ui/TransactionItem';
 import { format } from 'date-fns';
 
+if (Platform.OS === 'android') {
+  if (UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+  }
+}
+
 export default function TransactionsScreen() {
   const colorScheme = useColorScheme();
   const theme = colorScheme ?? 'light';
   const { transactions } = useTransactionStore();
+
+  useEffect(() => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+  }, [transactions]);
 
   // Use ALL transactions for the history list
   const groupedTransactions = useMemo(() => {
@@ -54,44 +64,42 @@ export default function TransactionsScreen() {
   return (
     <View style={[styles.container, { backgroundColor: Colors[theme].background }]}>
       <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']}>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.header}>
-            <Text style={[styles.title, { color: Colors[theme].text }]}>All Transactions</Text>
-          </View>
-
-          {groupedTransactions.length === 0 ? (
+        <SectionList
+          sections={groupedTransactions}
+          keyExtractor={(item) => item.id}
+          stickySectionHeadersEnabled={false}
+          contentContainerStyle={styles.scrollContent}
+          ListHeaderComponent={
+            <View style={styles.header}>
+              <Text style={[styles.title, { color: Colors[theme].text }]}>All Transactions</Text>
+            </View>
+          }
+          ListEmptyComponent={
             <View style={styles.emptyState}>
               <Text style={{ color: Colors[theme].icon }}>No transactions yet</Text>
             </View>
-          ) : (
-            <>
-              {groupedTransactions.map((group) => (
-                <View key={group.title} style={styles.groupContainer}>
-                  <Text style={[styles.groupTitle, { color: Colors[theme].text }]}>{group.title}</Text>
-                  
-                  {group.data.map((t) => (
-                    <TransactionItem key={t.id} transaction={t} />
-                  ))}
-                  
-                  <View style={[styles.groupFooter, { backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : '#f3f4f6' }]}>
-                    <View style={styles.footerItem}>
-                      <Text style={styles.footerLabel}>Income</Text>
-                      <Text style={styles.incomeAmountSmall}>{formatCurrency(group.income)}</Text>
-                    </View>
-                    <View style={styles.footerItem}>
-                      <Text style={styles.footerLabel}>Expense</Text>
-                      <Text style={styles.expenseAmountSmall}>{formatCurrency(group.expense)}</Text>
-                    </View>
-                    <View style={styles.footerItem}>
-                      <Text style={styles.footerLabel}>Balance</Text>
-                      <Text style={[styles.balanceTextSmall, { color: Colors[theme].text }]}>{formatCurrency(group.balance)}</Text>
-                    </View>
-                  </View>
-                </View>
-              ))}
-            </>
+          }
+          renderItem={({ item }) => <TransactionItem transaction={item} />}
+          renderSectionHeader={({ section: { title } }) => (
+            <Text style={[styles.groupTitle, { color: Colors[theme].text }]}>{title}</Text>
           )}
-        </ScrollView>
+          renderSectionFooter={({ section }) => (
+            <View style={[styles.groupFooter, { backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : '#f3f4f6', marginBottom: 24 }]}>
+              <View style={styles.footerItem}>
+                <Text style={styles.footerLabel}>Income</Text>
+                <Text style={styles.incomeAmountSmall}>{formatCurrency(section.income)}</Text>
+              </View>
+              <View style={styles.footerItem}>
+                <Text style={styles.footerLabel}>Expense</Text>
+                <Text style={styles.expenseAmountSmall}>{formatCurrency(section.expense)}</Text>
+              </View>
+              <View style={styles.footerItem}>
+                <Text style={styles.footerLabel}>Balance</Text>
+                <Text style={[styles.balanceTextSmall, { color: Colors[theme].text }]}>{formatCurrency(section.balance)}</Text>
+              </View>
+            </View>
+          )}
+        />
       </SafeAreaView>
     </View>
   );

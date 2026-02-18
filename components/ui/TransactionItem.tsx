@@ -1,30 +1,18 @@
 import React from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { Swipeable, RectButton } from 'react-native-gesture-handler';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Transaction, useTransactionStore } from '@/store/transactionStore';
 import { formatCurrency, formatDate } from '@/utils/format';
 import { useRouter } from 'expo-router';
-import { ArrowUpRight, ArrowDownLeft, ShoppingBag, Coffee, Home, Zap, Car, Utensils, Trash2 } from 'lucide-react-native';
+import { Trash2 } from 'lucide-react-native';
+import { getCategoryIcon } from '@/utils/icons';
 
 interface TransactionItemProps {
   transaction: Transaction;
 }
-
-const getCategoryIcon = (category: string, color: string) => {
-  switch (category.toLowerCase()) {
-    case 'shopping': return <ShoppingBag size={24} color={color} />;
-    case 'food': return <Coffee size={24} color={color} />;
-    case 'housing': return <Home size={24} color={color} />;
-    case 'utilities': return <Zap size={24} color={color} />;
-    case 'transport': return <Car size={24} color={color} />;
-    case 'dining': return <Utensils size={24} color={color} />;
-    case 'salary': return <ArrowDownLeft size={24} color={color} />;
-    case 'investment': return <ArrowUpRight size={24} color={color} />;
-    default: return <ShoppingBag size={24} color={color} />;
-  }
-};
 
 export function TransactionItem({ transaction }: TransactionItemProps) {
   const router = useRouter();
@@ -33,12 +21,9 @@ export function TransactionItem({ transaction }: TransactionItemProps) {
   const { deleteTransaction } = useTransactionStore();
   const isIncome = transaction.type === 'income';
   const amountColor = isIncome ? Colors[theme].success : Colors[theme].text;
+  const AnimatedView = Animated.View as any;
 
-  const renderRightActions = (progress: Animated.AnimatedInterpolation<number>, dragX: Animated.AnimatedInterpolation<number>) => {
-    const trans = dragX.interpolate({
-      inputRange: [0, 50, 100, 101],
-      outputRange: [-20, 0, 0, 1],
-    });
+  const renderRightActions = (progress: any, dragX: any) => {
     return (
       <RectButton style={styles.rightAction} onPress={() => deleteTransaction(transaction.id)}>
         <Trash2 size={24} color="#fff" />
@@ -55,16 +40,19 @@ export function TransactionItem({ transaction }: TransactionItemProps) {
         })}
       >
         <View style={[styles.container, { borderBottomColor: Colors[theme].border, backgroundColor: Colors[theme].background }]}>
-          <View style={[
-            styles.iconContainer, 
-            { 
-              backgroundColor: isIncome 
-                ? (theme === 'dark' ? '#064e3b' : '#dcfce7') 
-                : (theme === 'dark' ? '#7f1d1d' : '#fee2e2') 
-            }
-          ]}>
+          <AnimatedView 
+            sharedTransitionTag={`icon-${transaction.id}`}
+            style={[
+              styles.iconContainer, 
+              { 
+                backgroundColor: isIncome 
+                  ? (theme === 'dark' ? '#064e3b' : '#dcfce7') 
+                  : (theme === 'dark' ? '#7f1d1d' : '#fee2e2') 
+              }
+            ]}
+          >
             {getCategoryIcon(transaction.category, isIncome ? (theme === 'dark' ? '#34d399' : Colors.light.success) : (theme === 'dark' ? '#f87171' : Colors.light.danger))}
-          </View>
+          </AnimatedView>
           
           <View style={styles.details}>
             <Text style={[styles.description, { color: Colors[theme].text }]}>{transaction.description}</Text>

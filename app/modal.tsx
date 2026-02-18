@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, TextInput, View, Text, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { StyleSheet, TextInput, View, Text, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert, Keyboard } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useTransactionStore, TransactionType } from '@/store/transactionStore';
@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/Button';
 import { X, Calendar as CalendarIcon } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { format } from 'date-fns';
+import Animated from 'react-native-reanimated';
+import { getCategoryIcon } from '@/utils/icons';
 
 const INCOME_CATEGORIES = ['Salary', 'Freelance', 'Investment', 'Gift', 'Other'];
 const EXPENSE_CATEGORIES = ['Food', 'Transport', 'Housing', 'Utilities', 'Shopping', 'Entertainment', 'Health', 'Education', 'Other'];
@@ -21,25 +23,16 @@ export default function ModalScreen() {
   const theme = colorScheme ?? 'light';
   const { transactions, addTransaction, updateTransaction } = useTransactionStore();
 
-  const [type, setType] = useState<TransactionType>('expense');
-  const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState('');
-  const [description, setDescription] = useState('');
-  const [date, setDate] = useState(new Date());
+  const transaction = isEditing ? transactions.find(t => t.id === params.id) : undefined;
+
+  const [type, setType] = useState<TransactionType>(transaction?.type || 'expense');
+  const [amount, setAmount] = useState(transaction?.amount.toString() || '');
+  const [category, setCategory] = useState(transaction?.category || '');
+  const [description, setDescription] = useState(transaction?.description || '');
+  const [date, setDate] = useState(transaction ? new Date(transaction.date) : new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  React.useEffect(() => {
-    if (isEditing) {
-      const transaction = transactions.find(t => t.id === params.id);
-      if (transaction) {
-        setType(transaction.type);
-        setAmount(transaction.amount.toString());
-        setCategory(transaction.category);
-        setDescription(transaction.description);
-        setDate(new Date(transaction.date));
-      }
-    }
-  }, [params.id, transactions]);
+  const AnimatedView = Animated.View as any;
 
   const categories = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
 
@@ -75,6 +68,7 @@ export default function ModalScreen() {
       });
     }
 
+    Keyboard.dismiss();
     router.back();
   };
 
@@ -91,7 +85,26 @@ export default function ModalScreen() {
       <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
       
       <View style={styles.header}>
-        <Text style={[styles.title, { color: Colors[theme].text }]}>{isEditing ? 'Edit Transaction' : 'New Transaction'}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          {isEditing && (
+            <AnimatedView
+              sharedTransitionTag={`icon-${params.id}`}
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 24,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: type === 'income'
+                  ? (theme === 'dark' ? '#064e3b' : '#dcfce7') 
+                  : (theme === 'dark' ? '#7f1d1d' : '#fee2e2')
+              }}
+            >
+              {getCategoryIcon(category, type === 'income' ? (theme === 'dark' ? '#34d399' : Colors.light.success) : (theme === 'dark' ? '#f87171' : Colors.light.danger))}
+            </AnimatedView>
+          )}
+          <Text style={[styles.title, { color: Colors[theme].text }]}>{isEditing ? 'Edit Transaction' : 'New Transaction'}</Text>
+        </View>
         <TouchableOpacity onPress={() => router.back()}>
           <X color={Colors[theme].text} size={24} />
         </TouchableOpacity>

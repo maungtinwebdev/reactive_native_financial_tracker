@@ -1,5 +1,5 @@
 import React, { useMemo, useEffect } from 'react';
-import { StyleSheet, ScrollView, View, Text, TouchableOpacity, Platform } from 'react-native';
+import { StyleSheet, ScrollView, View, Text, TouchableOpacity, Platform, LayoutAnimation, UIManager } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTransactionStore } from '@/store/transactionStore';
@@ -12,11 +12,21 @@ import { useRouter } from 'expo-router';
 import { DateNavigator } from '@/components/DateNavigator';
 import { format } from 'date-fns';
 
+if (Platform.OS === 'android') {
+  if (UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+  }
+}
+
 export default function DashboardScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const theme = colorScheme ?? 'light';
   const { transactions, filter, setFilter, getFilteredTransactions, dateRange, selectedDate } = useTransactionStore();
+
+  useEffect(() => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+  }, [transactions, filter, selectedDate, dateRange]);
 
   useEffect(() => {
     if (filter !== 'monthly') {
@@ -79,7 +89,7 @@ export default function DashboardScreen() {
 
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: Colors[theme].text }]}>Recent Transactions</Text>
-            <TouchableOpacity onPress={() => router.push('/(tabs)/explore')}>
+            <TouchableOpacity onPress={() => router.push('/(tabs)/transactions')}>
               <Text style={{ color: Colors[theme].tint }}>See All</Text>
             </TouchableOpacity>
           </View>
