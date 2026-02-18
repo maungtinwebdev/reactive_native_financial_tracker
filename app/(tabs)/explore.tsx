@@ -92,7 +92,7 @@ export default function AnalyticsScreen() {
   }, [groupedTransactions, theme, range]);
 
   // Prepare Category Data (All Time for selected range view)
-  const { categoryData, totalExpense } = useMemo(() => {
+  const { categoryData, totalExpense: pieTotalExpense } = useMemo(() => {
     // Use all groups for the pie chart too
     const expenses = groupedTransactions.flatMap(group => 
       group.data.filter(t => (t.type || '').toLowerCase() === 'expense')
@@ -119,9 +119,13 @@ export default function AnalyticsScreen() {
 
   // Calculate Insights
   const totalIncome = incomeData.reduce((acc, curr) => acc + curr.value, 0);
-  const totalExpenseVal = expenseData.reduce((acc, curr) => acc + curr.value, 0);
+  const totalExpense = expenseData.reduce((acc, curr) => acc + curr.value, 0);
+  const netSavings = totalIncome - totalExpense;
   const savingsRate = totalIncome > 0 
-    ? ((totalIncome - totalExpenseVal) / totalIncome) * 100 
+    ? (netSavings / totalIncome) * 100 
+    : 0;
+  const expenseRate = totalIncome > 0
+    ? (totalExpense / totalIncome) * 100
     : 0;
   
   const getRangeLabel = () => {
@@ -168,18 +172,30 @@ export default function AnalyticsScreen() {
             </View>
             <View style={[styles.summaryCard, { backgroundColor: theme === 'dark' ? '#1c1c1e' : '#fff' }]}>
               <Text style={styles.summaryLabel}>Total Expense</Text>
-              <Text style={[styles.summaryValue, { color: '#f87171' }]}>{formatCurrency(totalExpenseVal)}</Text>
+              <Text style={[styles.summaryValue, { color: '#f87171' }]}>{formatCurrency(totalExpense)}</Text>
             </View>
           </View>
 
-          <View style={[styles.summaryCard, { backgroundColor: theme === 'dark' ? '#1c1c1e' : '#fff', marginBottom: 24 }]}>
-             <Text style={styles.summaryLabel}>Net Savings Rate</Text>
-             <Text style={[styles.summaryValue, { color: savingsRate >= 0 ? '#4ade80' : '#f87171' }]}>
-               {savingsRate.toFixed(1)}%
-             </Text>
-             <Text style={[styles.summarySubtext, { color: Colors[theme].icon }]}>
-               {savingsRate > 20 ? "Great job! You're saving well." : "Try to reduce expenses to save more."}
-             </Text>
+          <View style={[styles.summaryContainer, { marginBottom: 24 }]}>
+             <View style={[styles.summaryCard, { backgroundColor: theme === 'dark' ? '#1c1c1e' : '#fff' }]}>
+               <Text style={styles.summaryLabel}>Net Savings Rate</Text>
+               <Text style={[styles.summaryValue, { color: savingsRate >= 0 ? '#4ade80' : '#f87171' }]}>
+                 {Math.round(savingsRate)
+}%
+               </Text>
+               <Text style={[styles.summarySubtext, { color: Colors[theme].icon }]}>
+                 {savingsRate > 20 ? "Good!" : "Low"}
+               </Text>
+             </View>
+             <View style={[styles.summaryCard, { backgroundColor: theme === 'dark' ? '#1c1c1e' : '#fff' }]}>
+               <Text style={styles.summaryLabel}>Expense Rate</Text>
+               <Text style={[styles.summaryValue, { color: '#f87171' }]}>
+                 {Math.round(expenseRate)}%
+               </Text>
+               <Text style={[styles.summarySubtext, { color: Colors[theme].icon }]}>
+                 of Income
+               </Text>
+             </View>
           </View>
 
           {groupedTransactions.length === 0 ? (
@@ -253,7 +269,7 @@ export default function AnalyticsScreen() {
                           <View style={{ justifyContent: 'center', alignItems: 'center' }}>
                             <Text style={{ fontSize: 12, color: Colors[theme].icon }}>Total</Text>
                             <Text style={{ fontSize: 18, color: Colors[theme].text, fontWeight: 'bold' }}>
-                              {formatCurrency(totalExpense)}
+                              {formatCurrency(pieTotalExpense)}
                             </Text>
                           </View>
                         );
@@ -265,7 +281,7 @@ export default function AnalyticsScreen() {
                       <View key={index} style={styles.legendItem}>
                         <View style={[styles.legendColor, { backgroundColor: item.color }]} />
                         <Text style={[styles.legendText, { color: Colors[theme].text }]}>
-                           {item.text} ({((item.value / totalExpense) * 100).toFixed(0)}%)
+                           {item.text} ({((item.value / pieTotalExpense) * 100).toFixed(0)}%)
                         </Text>
                       </View>
                     ))}
