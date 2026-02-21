@@ -6,11 +6,10 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { formatCurrency, formatDate } from '@/utils/format';
 import { getCategoryIcon } from '@/utils/icons';
-import { ChevronDown, ChevronUp } from 'lucide-react-native';
+import { ArrowDown, ArrowUp, ChevronDown, ChevronUp } from 'lucide-react-native';
 
 export interface TransactionGroup {
-  id: string; // Unique ID for the group
-  category: string;
+  id: string;
   date: string;
   type: 'income' | 'expense';
   transactions: Transaction[];
@@ -49,14 +48,19 @@ export function GroupedTransactionItem({ group }: GroupedTransactionItemProps) {
               : (theme === 'dark' ? '#7f1d1d' : '#fee2e2') 
           }
         ]}>
-          {getCategoryIcon(group.category, isIncome ? (theme === 'dark' ? '#34d399' : Colors.light.success) : (theme === 'dark' ? '#f87171' : Colors.light.danger))}
-          <View style={[styles.badge, { backgroundColor: Colors[theme].tint }]}>
-            <Text style={styles.badgeText}>{group.transactions.length}</Text>
+          {isIncome 
+            ? <ArrowDown size={24} color={theme === 'dark' ? '#34d399' : Colors.light.success} />
+            : <ArrowUp size={24} color={theme === 'dark' ? '#f87171' : Colors.light.danger} />
+          }
+          <View style={[styles.badge, { backgroundColor: Colors[theme].tint, borderColor: Colors[theme].background }]}>
+            <Text style={[styles.badgeText, { color: theme === 'dark' ? '#000' : '#fff' }]}>{group.transactions.length}</Text>
           </View>
         </View>
 
         <View style={styles.details}>
-          <Text style={[styles.description, { color: Colors[theme].text }]}>{group.category}</Text>
+          <Text style={[styles.description, { color: Colors[theme].text }]}>
+            {isIncome ? 'Total Income' : 'Total Expense'}
+          </Text>
           <Text style={[styles.date, { color: Colors[theme].icon }]}>{formatDate(group.date)}</Text>
         </View>
 
@@ -79,7 +83,7 @@ export function GroupedTransactionItem({ group }: GroupedTransactionItemProps) {
               styles.childWrapper, 
               index === group.transactions.length - 1 && styles.lastChild
             ]}>
-              <TransactionItem transaction={t} hideIcon />
+              <TransactionItem transaction={t} />
             </View>
           ))}
         </View>
@@ -117,10 +121,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 4,
     borderWidth: 2,
-    borderColor: '#fff',
   },
   badgeText: {
-    color: '#fff',
     fontSize: 10,
     fontWeight: 'bold',
   },

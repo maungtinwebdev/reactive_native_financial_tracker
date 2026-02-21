@@ -45,12 +45,13 @@ export default function TransactionsScreen() {
     
     // 3. Transform to array with summaries
     return Array.from(groups.entries()).map(([key, items]) => {
-      // Sub-group by Date + Category + Type
+      // Sub-group by Date + Type
       const subGroups = new Map<string, Transaction[]>();
       
       items.forEach(t => {
         const dateKey = format(new Date(t.date), 'yyyy-MM-dd');
-        const subKey = `${dateKey}_${t.category}_${t.type}`;
+        // Group transactions by Date and Type (Income vs Expense)
+        const subKey = `${dateKey}_${t.type}`;
         
         if (!subGroups.has(subKey)) {
           subGroups.set(subKey, []);
@@ -68,7 +69,6 @@ export default function TransactionsScreen() {
           const totalAmount = groupItems.reduce((sum, t) => sum + t.amount, 0);
           processedItems.push({
             id: `group-${first.id}`, // Use first ID as base for key
-            category: first.category,
             date: first.date,
             type: first.type,
             transactions: groupItems,
