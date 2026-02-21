@@ -1,7 +1,7 @@
 Recent Transactions
                                         see all
                 January 2026
-item one
+item one if same category and same date sum with show accordian for protecting long list
 item two
 item three
 item four

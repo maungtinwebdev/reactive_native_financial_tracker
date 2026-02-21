@@ -7,6 +7,8 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { formatCurrency } from '@/utils/format';
 import { format, isSameDay, isSameYear, startOfYear, endOfYear, eachMonthOfInterval, isWithinInterval } from 'date-fns';
+import { generatePDF } from '@/utils/pdfGenerator';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function AnalyticsScreen() {
   const colorScheme = useColorScheme();
@@ -318,6 +320,30 @@ export default function AnalyticsScreen() {
                   </View>
                 </View>
               )}
+
+              {/* Monthly Reports Export */}
+              {range === 'monthly' && (
+                <View style={styles.sectionContainer}>
+                  <Text style={[styles.sectionTitle, { color: Colors[theme].text }]}>Monthly Reports</Text>
+                  {groupedTransactions.map((group, index) => (
+                    <View key={index} style={[styles.reportCard, { backgroundColor: theme === 'dark' ? '#1c1c1e' : '#fff' }]}>
+                      <View style={styles.reportInfo}>
+                        <Text style={[styles.reportMonth, { color: Colors[theme].text }]}>{group.title}</Text>
+                        <Text style={[styles.reportSummary, { color: Colors[theme].icon }]}>
+                          In: <Text style={{ color: '#4ade80' }}>{formatCurrency(group.income)}</Text> • Out: <Text style={{ color: '#f87171' }}>{formatCurrency(group.expense)}</Text>
+                        </Text>
+                      </View>
+                      <TouchableOpacity 
+                        style={[styles.exportButton, { backgroundColor: theme === 'dark' ? '#333' : '#f3f4f6' }]}
+                        onPress={() => generatePDF(`Monthly Report - ${group.title} ${new Date().getFullYear()}`, group.data, { income: group.income, expense: group.expense, balance: group.balance })}
+                      >
+                        <Ionicons name="document-text-outline" size={20} color={Colors[theme].text} />
+                        <Text style={[styles.exportButtonText, { color: Colors[theme].text }]}>PDF</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
             </>
           )}
         </ScrollView>
@@ -437,5 +463,51 @@ const styles = StyleSheet.create({
   legendText: {
     fontSize: 12,
     fontWeight: '500',
+  },
+  sectionContainer: {
+    marginBottom: 20,
+    marginTop: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  reportCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    marginBottom: 12,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  reportInfo: {
+    flex: 1,
+  },
+  reportMonth: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  reportSummary: {
+    fontSize: 12,
+  },
+  exportButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginLeft: 12,
+  },
+  exportButtonText: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginLeft: 6,
   },
 });
