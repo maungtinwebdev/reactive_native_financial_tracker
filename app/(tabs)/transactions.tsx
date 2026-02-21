@@ -1,11 +1,12 @@
 import React, { useMemo, useEffect } from 'react';
 import { StyleSheet, SectionList, View, Text, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTransactionStore } from '@/store/transactionStore';
+import { useTransactionStore, Transaction } from '@/store/transactionStore';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { formatCurrency } from '@/utils/format';
 import { TransactionItem } from '@/components/ui/TransactionItem';
+import { GroupedTransactionItem, TransactionGroup } from '@/components/ui/GroupedTransactionItem';
 import { format } from 'date-fns';
 
 if (Platform.OS === 'android') {
@@ -13,6 +14,8 @@ if (Platform.OS === 'android') {
     UIManager.setLayoutAnimationEnabledExperimental(true);
   }
 }
+
+type ListItem = Transaction | TransactionGroup;
 
 export default function TransactionsScreen() {
   const colorScheme = useColorScheme();
@@ -29,7 +32,7 @@ export default function TransactionsScreen() {
     const sorted = [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     // 2. Group by Month Year
-    const groups = new Map<string, typeof transactions>();
+    const groups = new Map<string, Transaction[]>();
     
     sorted.forEach(t => {
       const date = new Date(t.date);
@@ -42,6 +45,41 @@ export default function TransactionsScreen() {
     
     // 3. Transform to array with summaries
     return Array.from(groups.entries()).map(([key, items]) => {
+      // Sub-group by Date + Category + Type
+      const subGroups = new Map<string, Transaction[]>();
+      
+      items.forEach(t => {
+        const dateKey = format(new Date(t.date), 'yyyy-MM-dd');
+        const subKey = `${dateKey}_${t.category}_${t.type}`;
+        
+        if (!subGroups.has(subKey)) {
+          subGroups.set(subKey, []);
+        }
+        subGroups.get(subKey)!.push(t);
+      });
+
+      const processedItems: ListItem[] = [];
+
+      Array.from(subGroups.values()).forEach(groupItems => {
+        if (groupItems.length === 1) {
+          processedItems.push(groupItems[0]);
+        } else {
+          const first = groupItems[0];
+          const totalAmount = groupItems.reduce((sum, t) => sum + t.amount, 0);
+          processedItems.push({
+            id: `group-${first.id}`, // Use first ID as base for key
+            category: first.category,
+            date: first.date,
+            type: first.type,
+            transactions: groupItems,
+            totalAmount
+          });
+        }
+      });
+
+      // Sort processed items by date desc
+      processedItems.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
       // Calculate totals for this group (which is a whole month)
       const groupIncome = items
         .filter(t => (t.type || '').toLowerCase() === 'income')
@@ -53,13 +91,20 @@ export default function TransactionsScreen() {
         
       return {
         title: key,
-        data: items,
+        data: processedItems,
         income: groupIncome,
         expense: groupExpense,
         balance: groupIncome - groupExpense
       };
     });
   }, [transactions]);
+
+  const renderItem = ({ item }: { item: ListItem }) => {
+    if ('transactions' in item) {
+      return <GroupedTransactionItem group={item} />;
+    }
+    return <TransactionItem transaction={item} />;
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: Colors[theme].background }]}>
@@ -79,7 +124,7 @@ export default function TransactionsScreen() {
               <Text style={{ color: Colors[theme].icon }}>No transactions yet</Text>
             </View>
           }
-          renderItem={({ item }) => <TransactionItem transaction={item} />}
+          renderItem={renderItem}
           renderSectionHeader={({ section: { title } }) => (
             <Text style={[styles.groupTitle, { color: Colors[theme].text }]}>{title}</Text>
           )}

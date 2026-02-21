@@ -7,14 +7,15 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Transaction, useTransactionStore } from '@/store/transactionStore';
 import { formatCurrency, formatDate } from '@/utils/format';
 import { useRouter } from 'expo-router';
-import { Trash2 } from 'lucide-react-native';
+import { Trash2, Pencil } from 'lucide-react-native';
 import { getCategoryIcon } from '@/utils/icons';
 
 interface TransactionItemProps {
   transaction: Transaction;
+  hideIcon?: boolean;
 }
 
-export function TransactionItem({ transaction }: TransactionItemProps) {
+export function TransactionItem({ transaction, hideIcon = false }: TransactionItemProps) {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const theme = colorScheme ?? 'light';
@@ -25,9 +26,20 @@ export function TransactionItem({ transaction }: TransactionItemProps) {
 
   const renderRightActions = (progress: any, dragX: any) => {
     return (
-      <RectButton style={styles.rightAction} onPress={() => deleteTransaction(transaction.id)}>
-        <Trash2 size={24} color="#fff" />
-      </RectButton>
+      <View style={{ flexDirection: 'row', width: 140 }}>
+        <RectButton 
+          style={[styles.rightAction, { backgroundColor: '#3b82f6' }]} 
+          onPress={() => router.push({
+            pathname: '/modal',
+            params: { id: transaction.id }
+          })}
+        >
+          <Pencil size={24} color="#fff" />
+        </RectButton>
+        <RectButton style={[styles.rightAction, { backgroundColor: '#ef4444' }]} onPress={() => deleteTransaction(transaction.id)}>
+          <Trash2 size={24} color="#fff" />
+        </RectButton>
+      </View>
     );
   };
 
@@ -40,19 +52,21 @@ export function TransactionItem({ transaction }: TransactionItemProps) {
         })}
       >
         <View style={[styles.container, { borderBottomColor: Colors[theme].border, backgroundColor: Colors[theme].background }]}>
-          <AnimatedView 
-            sharedTransitionTag={`icon-${transaction.id}`}
-            style={[
-              styles.iconContainer, 
-              { 
-                backgroundColor: isIncome 
-                  ? (theme === 'dark' ? '#064e3b' : '#dcfce7') 
-                  : (theme === 'dark' ? '#7f1d1d' : '#fee2e2') 
-              }
-            ]}
-          >
-            {getCategoryIcon(transaction.category, isIncome ? (theme === 'dark' ? '#34d399' : Colors.light.success) : (theme === 'dark' ? '#f87171' : Colors.light.danger))}
-          </AnimatedView>
+          {!hideIcon && (
+            <AnimatedView 
+              sharedTransitionTag={`icon-${transaction.id}`}
+              style={[
+                styles.iconContainer, 
+                { 
+                  backgroundColor: isIncome 
+                    ? (theme === 'dark' ? '#064e3b' : '#dcfce7') 
+                    : (theme === 'dark' ? '#7f1d1d' : '#fee2e2') 
+                }
+              ]}
+            >
+              {getCategoryIcon(transaction.category, isIncome ? (theme === 'dark' ? '#34d399' : Colors.light.success) : (theme === 'dark' ? '#f87171' : Colors.light.danger))}
+            </AnimatedView>
+          )}
           
           <View style={styles.details}>
             <Text style={[styles.description, { color: Colors[theme].text }]}>{transaction.description}</Text>
@@ -100,10 +114,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   rightAction: {
-    backgroundColor: '#dd2c00',
     justifyContent: 'center',
     alignItems: 'center',
-    width: 80,
+    width: 70,
     height: '100%',
   },
 });
