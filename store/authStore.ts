@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface AuthState {
     session: Session | null;
@@ -8,6 +9,7 @@ interface AuthState {
     isLoading: boolean;
     isInitialized: boolean;
     pendingEmail: string | null; // Email awaiting OTP verification
+    isGuest: boolean;
 
     initialize: () => Promise<void>;
     signUp: (email: string, password: string) => Promise<{ error: string | null; needsVerification: boolean }>;
@@ -17,6 +19,7 @@ interface AuthState {
     signOut: () => Promise<void>;
     setSession: (session: Session | null) => void;
     setPendingEmail: (email: string | null) => void;
+    setGuestMode: (isGuest: boolean) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()((set, get) => ({
@@ -25,14 +28,19 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     isLoading: false,
     isInitialized: false,
     pendingEmail: null,
+    isGuest: false,
 
     initialize: async () => {
         try {
+            const guestState = await AsyncStorage.getItem('isGuest');
+            const isGuest = guestState === 'true';
+
             const { data: { session } } = await supabase.auth.getSession();
             set({
                 session,
                 user: session?.user ?? null,
                 isInitialized: true,
+                isGuest,
             });
 
             // Listen for auth state changes
@@ -43,7 +51,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
                 });
             });
         } catch {
-            set({ isInitialized: true });
+            set({ isInitialized: true, isGuest: false });
         }
     },
 
@@ -160,12 +168,14 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
     signOut: async () => {
         set({ isLoading: true });
+        await AsyncStorage.removeItem('isGuest');
         await supabase.auth.signOut();
         set({
             session: null,
             user: null,
             isLoading: false,
             pendingEmail: null,
+            isGuest: false,
         });
     },
 
@@ -178,5 +188,14 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
     setPendingEmail: (email) => {
         set({ pendingEmail: email });
+    },
+
+    setGuestMode: async (isGuest: boolean) => {
+        if (isGuest) {
+            await AsyncStorage.setItem('isGuest', 'true');
+        } else {
+            await AsyncStorage.removeItem('isGuest');
+        }
+        set({ isGuest });
     },
 }));

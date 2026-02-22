@@ -27,7 +27,7 @@ const THEME_OPTIONS: { value: ThemeOption; label: string; icon: keyof typeof Ion
 export default function ProfileScreen() {
     const colorScheme = useColorScheme();
     const theme = colorScheme ?? 'light';
-    const { user, signOut, isLoading } = useAuthStore();
+    const { user, signOut, isLoading, isGuest, setGuestMode } = useAuthStore();
     const { theme: currentTheme, setTheme } = useThemeStore();
     const { transactions } = useTransactionStore();
 
@@ -42,8 +42,8 @@ export default function ProfileScreen() {
         ]);
     };
 
-    const userEmail = user?.email ?? 'Unknown';
-    const userInitial = userEmail.charAt(0).toUpperCase();
+    const userEmail = isGuest ? 'Guest User' : (user?.email ?? 'Unknown');
+    const userInitial = isGuest ? 'G' : userEmail.charAt(0).toUpperCase();
     const memberSince = user?.created_at
         ? new Date(user.created_at).toLocaleDateString('en-US', {
             month: 'long',
@@ -71,7 +71,7 @@ export default function ProfileScreen() {
                             <View style={styles.onlineDot} />
                         </View>
                         <Text style={styles.profileEmail}>{userEmail}</Text>
-                        <Text style={styles.memberSince}>Member since {memberSince}</Text>
+                        {!isGuest && <Text style={styles.memberSince}>Member since {memberSince}</Text>}
 
                         <View style={styles.statsRow}>
                             <View style={styles.statItem}>
@@ -174,57 +174,76 @@ export default function ProfileScreen() {
                     </View>
 
                     {/* Account Section */}
-                    <View style={styles.section}>
-                        <Text style={[styles.sectionTitle, { color: Colors[theme].text }]}>
-                            Account
-                        </Text>
-                        <View
-                            style={[
-                                styles.card,
-                                { backgroundColor: Colors[theme].card, borderColor: Colors[theme].border },
-                            ]}
-                        >
-                            <TouchableOpacity style={styles.menuItem}>
-                                <View style={styles.menuLeft}>
-                                    <Ionicons name="mail-outline" size={20} color={Colors[theme].icon} />
-                                    <View>
-                                        <Text style={[styles.menuLabel, { color: Colors[theme].text }]}>Email</Text>
-                                        <Text style={[styles.menuValue, { color: Colors[theme].icon }]}>{userEmail}</Text>
-                                    </View>
-                                </View>
-                            </TouchableOpacity>
-
-                            <View style={[styles.menuDivider, { backgroundColor: Colors[theme].border }]} />
-
-                            <TouchableOpacity style={styles.menuItem}>
-                                <View style={styles.menuLeft}>
-                                    <Ionicons name="shield-checkmark-outline" size={20} color={Colors[theme].icon} />
-                                    <View>
-                                        <Text style={[styles.menuLabel, { color: Colors[theme].text }]}>Account Status</Text>
-                                        <Text style={[styles.menuValue, { color: Colors[theme].success }]}>Verified</Text>
-                                    </View>
-                                </View>
-                                <Ionicons name="checkmark-circle" size={20} color={Colors[theme].success} />
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-
-                    {/* Sign Out Button */}
-                    <View style={styles.section}>
-                        <TouchableOpacity
-                            style={[
-                                styles.signOutButton,
-                                { backgroundColor: Colors[theme].card, borderColor: Colors[theme].danger },
-                            ]}
-                            onPress={handleSignOut}
-                            disabled={isLoading}
-                            activeOpacity={0.7}
-                        >
-                            <Ionicons name="log-out-outline" size={22} color={Colors[theme].danger} />
-                            <Text style={[styles.signOutText, { color: Colors[theme].danger }]}>
-                                Sign Out
+                    {!isGuest && (
+                        <View style={styles.section}>
+                            <Text style={[styles.sectionTitle, { color: Colors[theme].text }]}>
+                                Account
                             </Text>
-                        </TouchableOpacity>
+                            <View
+                                style={[
+                                    styles.card,
+                                    { backgroundColor: Colors[theme].card, borderColor: Colors[theme].border },
+                                ]}
+                            >
+                                <TouchableOpacity style={styles.menuItem}>
+                                    <View style={styles.menuLeft}>
+                                        <Ionicons name="mail-outline" size={20} color={Colors[theme].icon} />
+                                        <View>
+                                            <Text style={[styles.menuLabel, { color: Colors[theme].text }]}>Email</Text>
+                                            <Text style={[styles.menuValue, { color: Colors[theme].icon }]}>{userEmail}</Text>
+                                        </View>
+                                    </View>
+                                </TouchableOpacity>
+
+                                <View style={[styles.menuDivider, { backgroundColor: Colors[theme].border }]} />
+
+                                <TouchableOpacity style={styles.menuItem}>
+                                    <View style={styles.menuLeft}>
+                                        <Ionicons name="shield-checkmark-outline" size={20} color={Colors[theme].icon} />
+                                        <View>
+                                            <Text style={[styles.menuLabel, { color: Colors[theme].text }]}>Account Status</Text>
+                                            <Text style={[styles.menuValue, { color: Colors[theme].success }]}>Verified</Text>
+                                        </View>
+                                    </View>
+                                    <Ionicons name="checkmark-circle" size={20} color={Colors[theme].success} />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    )}
+
+                    {/* Sign In / Sign Out Button */}
+                    <View style={styles.section}>
+                        {isGuest ? (
+                            <TouchableOpacity
+                                style={[
+                                    styles.signOutButton,
+                                    { backgroundColor: '#3b5998', borderColor: '#3b5998' },
+                                ]}
+                                onPress={() => setGuestMode(false)}
+                                disabled={isLoading}
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons name="log-in-outline" size={22} color="#fff" />
+                                <Text style={[styles.signOutText, { color: '#fff' }]}>
+                                    Sign In / Create Account
+                                </Text>
+                            </TouchableOpacity>
+                        ) : (
+                            <TouchableOpacity
+                                style={[
+                                    styles.signOutButton,
+                                    { backgroundColor: Colors[theme].card, borderColor: Colors[theme].danger },
+                                ]}
+                                onPress={handleSignOut}
+                                disabled={isLoading}
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons name="log-out-outline" size={22} color={Colors[theme].danger} />
+                                <Text style={[styles.signOutText, { color: Colors[theme].danger }]}>
+                                    Sign Out
+                                </Text>
+                            </TouchableOpacity>
+                        )}
                     </View>
 
                     <Text style={[styles.versionText, { color: Colors[theme].icon }]}>

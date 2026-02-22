@@ -25,7 +25,7 @@ export default function AuthScreen() {
     const colorScheme = useColorScheme();
     const theme = colorScheme ?? 'light';
     const router = useRouter();
-    const { signIn, signUp, isLoading } = useAuthStore();
+    const { signIn, signUp, isLoading, setGuestMode } = useAuthStore();
 
     const [mode, setMode] = useState<AuthMode>('signin');
     const [email, setEmail] = useState('');
@@ -277,6 +277,19 @@ export default function AuthScreen() {
                                     </Text>
                                 </TouchableOpacity>
                             </View>
+
+                            {/* Guest Mode */}
+                            <View style={styles.guestContainer}>
+                                <TouchableOpacity
+                                    style={styles.guestButton}
+                                    onPress={() => setGuestMode(true)}
+                                    disabled={isLoading}
+                                >
+                                    <Text style={[styles.guestText, { color: Colors[theme].text }]}>
+                                        Continue as Guest
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
                         </View>
                     </ScrollView>
                 </KeyboardAvoidingView>
@@ -405,5 +418,20 @@ const styles = StyleSheet.create({
     toggleLink: {
         fontSize: 14,
         fontWeight: '700',
+    },
+    guestContainer: {
+        marginTop: 24,
+        alignItems: 'center',
+    },
+    guestButton: {
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 24,
+        borderWidth: 1,
+        borderColor: '#3b5998',
+    },
+    guestText: {
+        fontSize: 15,
+        fontWeight: '600',
     },
 });

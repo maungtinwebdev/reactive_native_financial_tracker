@@ -14,7 +14,7 @@ export const unstable_settings = {
 };
 
 function AuthGate() {
-  const { session, isInitialized } = useAuthStore();
+  const { session, isInitialized, isGuest } = useAuthStore();
   const segments = useSegments();
   const router = useRouter();
 
@@ -23,14 +23,14 @@ function AuthGate() {
 
     const inAuthScreen = segments[0] === 'auth' || segments[0] === 'verify';
 
-    if (!session && !inAuthScreen) {
-      // No session → go to auth
+    if (!session && !isGuest && !inAuthScreen) {
+      // No session and not guest → go to auth
       router.replace('/auth');
-    } else if (session && inAuthScreen) {
-      // Has session but on auth/verify screen → go to home
+    } else if ((session || isGuest) && inAuthScreen) {
+      // Has session or guest but on auth/verify screen → go to home
       router.replace('/(tabs)');
     }
-  }, [session, isInitialized, segments]);
+  }, [session, isGuest, isInitialized, segments]);
 
   return null;
 }
