@@ -11,6 +11,8 @@ import { Plus } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { DateNavigator } from '@/components/DateNavigator';
 import { format } from 'date-fns';
+import { useThemeStore } from '@/store/themeStore';
+import { Ionicons } from '@expo/vector-icons';
 
 if (Platform.OS === 'android') {
   if (UIManager.setLayoutAnimationEnabledExperimental) {
@@ -22,7 +24,12 @@ export default function DashboardScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const theme = colorScheme ?? 'light';
+  const { setTheme } = useThemeStore();
   const { transactions, filter, setFilter, getFilteredTransactions, dateRange, selectedDate } = useTransactionStore();
+
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
 
   useEffect(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -63,7 +70,15 @@ export default function DashboardScreen() {
       <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
-            <Text style={[styles.greeting, { color: Colors[theme].text }]}>Financial Overview</Text>
+            <View style={styles.headerTop}>
+              <Text style={[styles.greeting, { color: Colors[theme].text }]}>Financial Overview</Text>
+              <TouchableOpacity 
+                onPress={toggleTheme} 
+                style={[styles.themeButton, { backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}
+              >
+                <Ionicons name={theme === 'dark' ? 'moon' : 'sunny'} size={24} color={Colors[theme].text} />
+              </TouchableOpacity>
+            </View>
             
             <DateNavigator />
           </View>
@@ -135,19 +150,17 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     marginTop: 8,
   },
-  filterContainer: {
+  headerTop: {
     flexDirection: 'row',
-    marginTop: 16,
-    gap: 8,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
   },
-  filterChip: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-  },
-  filterText: {
-    fontSize: 12,
-    fontWeight: '600',
+  themeButton: {
+    padding: 8,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   greeting: {
     fontSize: 28,

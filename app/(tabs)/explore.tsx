@@ -3,6 +3,7 @@ import { StyleSheet, ScrollView, View, Text, TouchableOpacity } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PieChart, LineChart } from 'react-native-gifted-charts';
 import { useTransactionStore } from '@/store/transactionStore';
+import { useThemeStore } from '@/store/themeStore';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { formatCurrency } from '@/utils/format';
@@ -13,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 export default function AnalyticsScreen() {
   const colorScheme = useColorScheme();
   const theme = colorScheme ?? 'light';
+  const { setTheme } = useThemeStore();
   const { transactions } = useTransactionStore();
   const [range, setRange] = useState<'daily' | 'monthly' | 'yearly'>('monthly');
 
@@ -171,8 +173,10 @@ export default function AnalyticsScreen() {
       <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
-            <Text style={[styles.title, { color: Colors[theme].text }]}>Financial Overview</Text>
-            <Text style={[styles.subtitle, { color: Colors[theme].icon }]}>{getRangeLabel()} Performance</Text>
+            <View>
+              <Text style={[styles.title, { color: Colors[theme].text }]}>Financial Overview</Text>
+              <Text style={[styles.subtitle, { color: Colors[theme].icon }]}>{getRangeLabel()} Performance</Text>
+            </View>
           </View>
 
           {/* Range Filter */}
