@@ -29,7 +29,7 @@ export default function AnalyticsScreen() {
         return isSameDay(date, now);
       }
       if (range === 'monthly') {
-        return isSameMonth(date, now);
+        return isSameYear(date, now);
       }
       if (range === 'yearly') {
         // "Yearly mean current year" - User requested current year for yearly too.
@@ -46,7 +46,7 @@ export default function AnalyticsScreen() {
     // Grouping key format based on range
     const getGroupKey = (date: Date) => {
       if (range === 'daily') return format(date, 'h a'); // Group by hour for daily view
-      if (range === 'monthly') return format(date, 'd MMM'); // Group by day for monthly view
+      if (range === 'monthly') return format(date, 'MMMM'); // Group by month name
       if (range === 'yearly') return format(date, 'yyyy');
       return format(date, 'MMMM yyyy');
     };
@@ -165,7 +165,22 @@ export default function AnalyticsScreen() {
   const getRangeLabel = () => {
     if (range === 'daily') return 'Today\'s';
     if (range === 'yearly') return 'This Year\'s';
-    return 'This Month\'s';
+    return 'This Year\'s';
+  };
+
+  const handleExportPDF = async () => {
+    const allTransactions = groupedTransactions.flatMap(g => g.data);
+    const title = `${getRangeLabel()} Financial Report - ${new Date().getFullYear()}`;
+    
+    await generatePDF(
+      title,
+      allTransactions,
+      {
+        income: totalIncome,
+        expense: totalExpense,
+        balance: totalIncome - totalExpense
+      }
+    );
   };
 
   return (
@@ -325,7 +340,7 @@ export default function AnalyticsScreen() {
                 </View>
               )}
 
-              {/* Monthly Reports Export */}
+              {/* Monthly Reports */}
               {range === 'monthly' && (
                 <View style={styles.sectionContainer}>
                   <Text style={[styles.sectionTitle, { color: Colors[theme].text }]}>Monthly Reports</Text>
@@ -366,6 +381,15 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  themeButton: {
+    padding: 8,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   filterContainer: {
     flexDirection: 'row',
