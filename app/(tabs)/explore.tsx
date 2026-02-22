@@ -165,7 +165,7 @@ export default function AnalyticsScreen() {
   const getRangeLabel = () => {
     if (range === 'daily') return 'Today\'s';
     if (range === 'yearly') return 'This Year\'s';
-    return 'This Year\'s';
+    return 'Monthly';
   };
 
   const handleExportPDF = async () => {

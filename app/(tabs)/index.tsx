@@ -13,6 +13,7 @@ import { DateNavigator } from '@/components/DateNavigator';
 import { format } from 'date-fns';
 import { useThemeStore } from '@/store/themeStore';
 import { Ionicons } from '@expo/vector-icons';
+import { SyncButton } from '@/components/SyncButton';
 
 if (Platform.OS === 'android') {
   if (UIManager.setLayoutAnimationEnabledExperimental) {
@@ -72,14 +73,17 @@ export default function DashboardScreen() {
           <View style={styles.header}>
             <View style={styles.headerTop}>
               <Text style={[styles.greeting, { color: Colors[theme].text }]}>Financial Overview</Text>
-              <TouchableOpacity 
-                onPress={toggleTheme} 
-                style={[styles.themeButton, { backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}
-              >
-                <Ionicons name={theme === 'dark' ? 'moon' : 'sunny'} size={24} color={Colors[theme].text} />
-              </TouchableOpacity>
+              <View style={styles.headerActions}>
+                <SyncButton />
+                <TouchableOpacity
+                  onPress={toggleTheme}
+                  style={[styles.themeButton, { backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}
+                >
+                  <Ionicons name={theme === 'dark' ? 'moon' : 'sunny'} size={24} color={Colors[theme].text} />
+                </TouchableOpacity>
+              </View>
             </View>
-            
+
             <DateNavigator />
           </View>
 
@@ -89,7 +93,7 @@ export default function DashboardScreen() {
           >
             <Text style={styles.balanceLabel}>Total Balance</Text>
             <Text style={styles.balanceAmount}>{formatCurrency(balance)}</Text>
-            
+
             <View style={styles.summaryContainer}>
               <View style={styles.summaryItem}>
                 <Text style={styles.summaryLabel}>Income</Text>
@@ -123,8 +127,8 @@ export default function DashboardScreen() {
 
       <TouchableOpacity
         style={[
-          styles.fab, 
-          { 
+          styles.fab,
+          {
             backgroundColor: Colors[theme].tint,
             shadowColor: Colors[theme].text,
           }
@@ -155,6 +159,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   themeButton: {
     padding: 8,
