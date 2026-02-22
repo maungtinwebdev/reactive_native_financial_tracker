@@ -7,7 +7,7 @@ import { useThemeStore } from '@/store/themeStore';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { formatCurrency } from '@/utils/format';
-import { format, isSameDay, isSameYear, startOfYear, endOfYear, eachMonthOfInterval, isWithinInterval } from 'date-fns';
+import { format, isSameDay, isSameYear, isSameMonth, startOfYear, endOfYear, eachMonthOfInterval, isWithinInterval } from 'date-fns';
 import { generatePDF } from '@/utils/pdfGenerator';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -29,7 +29,7 @@ export default function AnalyticsScreen() {
         return isSameDay(date, now);
       }
       if (range === 'monthly') {
-        return isSameYear(date, now);
+        return isSameMonth(date, now);
       }
       if (range === 'yearly') {
         // "Yearly mean current year" - User requested current year for yearly too.
@@ -46,7 +46,7 @@ export default function AnalyticsScreen() {
     // Grouping key format based on range
     const getGroupKey = (date: Date) => {
       if (range === 'daily') return format(date, 'h a'); // Group by hour for daily view
-      if (range === 'monthly') return format(date, 'MMM'); // Group by month name
+      if (range === 'monthly') return format(date, 'd MMM'); // Group by day for monthly view
       if (range === 'yearly') return format(date, 'yyyy');
       return format(date, 'MMMM yyyy');
     };
@@ -165,7 +165,7 @@ export default function AnalyticsScreen() {
   const getRangeLabel = () => {
     if (range === 'daily') return 'Today\'s';
     if (range === 'yearly') return 'This Year\'s';
-    return 'This Year\'s Monthly';
+    return 'This Month\'s';
   };
 
   return (
