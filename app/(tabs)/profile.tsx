@@ -217,10 +217,14 @@ export default function ProfileScreen() {
                             <TouchableOpacity
                                 style={[
                                     styles.signOutButton,
-                                    { backgroundColor: '#3b5998', borderColor: '#3b5998' },
+                                    { 
+                                        backgroundColor: '#3b5998', 
+                                        borderColor: '#3b5998',
+                                        opacity: 0.5 
+                                    },
                                 ]}
                                 onPress={() => setGuestMode(false)}
-                                disabled={isLoading}
+                                disabled={true}
                                 activeOpacity={0.7}
                             >
                                 <Ionicons name="log-in-outline" size={22} color="#fff" />

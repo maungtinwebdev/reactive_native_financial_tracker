@@ -66,7 +66,7 @@ export default function DashboardScreen() {
           <View style={styles.header}>
             <View style={styles.headerTop}>
               <Text style={[styles.greeting, { color: Colors[theme].text }]}>Financial Overview</Text>
-              <SyncButton />
+              {/* <SyncButton /> */}
             </View>
 
             <DateNavigator />
