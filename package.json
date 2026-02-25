@@ -13,6 +13,7 @@
     "build:apk": "eas build -p android --profile preview",
     "build:local": "eas build -p android --profile local --local",
     "export:web": "expo export",
+    "check:play-protect": "node ./scripts/check-play-protect.js",
     "lint": "expo lint"
   },
   "dependencies": {
