@@ -4,9 +4,11 @@ import { Transaction } from '@/store/transactionStore';
 import { TransactionItem } from './TransactionItem';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { formatCurrency, formatDate } from '@/utils/format';
+import { formatDate } from '@/utils/format';
+import { useCurrencyFormat } from '@/hooks/useCurrencyFormat';
 import { getCategoryIcon } from '@/utils/icons';
 import { ArrowDown, ArrowUp, ChevronDown, ChevronUp } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 
 export interface TransactionGroup {
   id: string;
@@ -24,6 +26,8 @@ export function GroupedTransactionItem({ group }: GroupedTransactionItemProps) {
   const [expanded, setExpanded] = useState(false);
   const colorScheme = useColorScheme();
   const theme = colorScheme ?? 'light';
+  const { t } = useTranslation();
+  const { formatAmount } = useCurrencyFormat();
   
   const isIncome = group.type === 'income';
   const amountColor = isIncome ? Colors[theme].success : Colors[theme].text;
@@ -59,14 +63,14 @@ export function GroupedTransactionItem({ group }: GroupedTransactionItemProps) {
 
         <View style={styles.details}>
           <Text style={[styles.description, { color: Colors[theme].text }]}>
-            {isIncome ? 'Total Income' : 'Total Expense'}
+            {isIncome ? t('transactions.totalIncome') : t('transactions.totalExpense')}
           </Text>
           <Text style={[styles.date, { color: Colors[theme].icon }]}>{formatDate(group.date)}</Text>
         </View>
 
         <View style={styles.rightContent}>
           <Text style={[styles.amount, { color: amountColor }]}>
-            {isIncome ? '+' : '-'}{formatCurrency(group.totalAmount)}
+            {isIncome ? '+' : '-'}{formatAmount(group.totalAmount)}
           </Text>
           {expanded ? (
             <ChevronUp size={20} color={Colors[theme].icon} />

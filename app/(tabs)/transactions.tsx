@@ -4,10 +4,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTransactionStore, Transaction } from '@/store/transactionStore';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { formatCurrency } from '@/utils/format';
+import { useCurrencyFormat } from '@/hooks/useCurrencyFormat';
 import { TransactionItem } from '@/components/ui/TransactionItem';
 import { GroupedTransactionItem, TransactionGroup } from '@/components/ui/GroupedTransactionItem';
 import { format } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 
 if (Platform.OS === 'android') {
   if (UIManager.setLayoutAnimationEnabledExperimental) {
@@ -21,6 +22,8 @@ export default function TransactionsScreen() {
   const colorScheme = useColorScheme();
   const theme = colorScheme ?? 'light';
   const { transactions } = useTransactionStore();
+  const { t } = useTranslation();
+  const { formatAmount } = useCurrencyFormat();
 
   useEffect(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -116,12 +119,12 @@ export default function TransactionsScreen() {
           contentContainerStyle={styles.scrollContent}
           ListHeaderComponent={
             <View style={styles.header}>
-              <Text style={[styles.title, { color: Colors[theme].text }]}>All Transactions</Text>
+              <Text style={[styles.title, { color: Colors[theme].text }]}>{t('transactions.title')}</Text>
             </View>
           }
           ListEmptyComponent={
             <View style={styles.emptyState}>
-              <Text style={{ color: Colors[theme].icon }}>No transactions yet</Text>
+              <Text style={{ color: Colors[theme].icon }}>{t('dashboard.noTransactions')}</Text>
             </View>
           }
           renderItem={renderItem}
@@ -131,16 +134,16 @@ export default function TransactionsScreen() {
           renderSectionFooter={({ section }) => (
             <View style={[styles.groupFooter, { backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : '#f3f4f6', marginBottom: 24 }]}>
               <View style={styles.footerItem}>
-                <Text style={styles.footerLabel}>Income</Text>
-                <Text style={styles.incomeAmountSmall}>{formatCurrency(section.income)}</Text>
+                <Text style={styles.footerLabel}>{t('transactions.income')}</Text>
+                <Text style={styles.incomeAmountSmall}>{formatAmount(section.income)}</Text>
               </View>
               <View style={styles.footerItem}>
-                <Text style={styles.footerLabel}>Expense</Text>
-                <Text style={styles.expenseAmountSmall}>{formatCurrency(section.expense)}</Text>
+                <Text style={styles.footerLabel}>{t('transactions.expense')}</Text>
+                <Text style={styles.expenseAmountSmall}>{formatAmount(section.expense)}</Text>
               </View>
               <View style={styles.footerItem}>
                 <Text style={styles.footerLabel}>Balance</Text>
-                <Text style={[styles.balanceTextSmall, { color: Colors[theme].text }]}>{formatCurrency(section.balance)}</Text>
+                <Text style={[styles.balanceTextSmall, { color: Colors[theme].text }]}>{formatAmount(section.balance)}</Text>
               </View>
             </View>
           )}

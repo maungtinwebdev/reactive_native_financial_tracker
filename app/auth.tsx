@@ -18,6 +18,7 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 type AuthMode = 'signin' | 'signup';
 
@@ -26,6 +27,7 @@ export default function AuthScreen() {
     const theme = colorScheme ?? 'light';
     const router = useRouter();
     const { signIn, signUp, isLoading, setGuestMode } = useAuthStore();
+    const { t } = useTranslation();
 
     const [mode, setMode] = useState<AuthMode>('signin');
     const [email, setEmail] = useState('');
@@ -106,8 +108,8 @@ export default function AuthScreen() {
                             <Text style={styles.heroTitle}>Financial Tracker</Text>
                             <Text style={styles.heroSubtitle}>
                                 {mode === 'signin'
-                                    ? 'Welcome back! Sign in to continue.'
-                                    : 'Create an account to get started.'}
+                                    ? t('auth.welcomeBack')
+                                    : t('auth.createAccount')}
                             </Text>
                         </LinearGradient>
 
@@ -129,7 +131,7 @@ export default function AuthScreen() {
                                             { color: mode === 'signin' ? Colors[theme].text : Colors[theme].icon },
                                         ]}
                                     >
-                                        Sign In
+                                        {t('auth.signIn')}
                                     </Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
@@ -146,14 +148,14 @@ export default function AuthScreen() {
                                             { color: mode === 'signup' ? Colors[theme].text : Colors[theme].icon },
                                         ]}
                                     >
-                                        Sign Up
+                                        {t('auth.signUp')}
                                     </Text>
                                 </TouchableOpacity>
                             </View>
 
                             {/* Email */}
                             <View style={styles.inputGroup}>
-                                <Text style={[styles.label, { color: Colors[theme].text }]}>Email</Text>
+                                <Text style={[styles.label, { color: Colors[theme].text }]}>{t('auth.email')}</Text>
                                 <View
                                     style={[
                                         styles.inputWrapper,
@@ -166,7 +168,7 @@ export default function AuthScreen() {
                                     <Ionicons name="mail-outline" size={20} color={Colors[theme].icon} />
                                     <TextInput
                                         style={[styles.input, { color: Colors[theme].text }]}
-                                        placeholder="you@example.com"
+                                        placeholder={t('auth.enterEmail')}
                                         placeholderTextColor={Colors[theme].icon}
                                         value={email}
                                         onChangeText={(t) => { setEmail(t); setErrors((e) => ({ ...e, email: undefined })); }}
@@ -182,7 +184,7 @@ export default function AuthScreen() {
 
                             {/* Password */}
                             <View style={styles.inputGroup}>
-                                <Text style={[styles.label, { color: Colors[theme].text }]}>Password</Text>
+                                <Text style={[styles.label, { color: Colors[theme].text }]}>{t('auth.password')}</Text>
                                 <View
                                     style={[
                                         styles.inputWrapper,
@@ -218,7 +220,7 @@ export default function AuthScreen() {
                             {/* Confirm Password (only for sign up) */}
                             {mode === 'signup' && (
                                 <View style={styles.inputGroup}>
-                                    <Text style={[styles.label, { color: Colors[theme].text }]}>Confirm Password</Text>
+                                    <Text style={[styles.label, { color: Colors[theme].text }]}>{t('auth.confirmPassword')}</Text>
                                     <View
                                         style={[
                                             styles.inputWrapper,
@@ -260,7 +262,7 @@ export default function AuthScreen() {
                                         <ActivityIndicator color="#fff" />
                                     ) : (
                                         <Text style={styles.submitText}>
-                                            {mode === 'signin' ? 'Sign In' : 'Create Account'}
+                                            {mode === 'signin' ? t('auth.signIn') : t('auth.signUp')}
                                         </Text>
                                     )}
                                 </LinearGradient>
@@ -286,7 +288,7 @@ export default function AuthScreen() {
                                     disabled={isLoading}
                                 >
                                     <Text style={[styles.guestText, { color: Colors[theme].text }]}>
-                                        Continue as Guest
+                                        {t('auth.continueAsGuest')}
                                     </Text>
                                 </TouchableOpacity>
                             </View>

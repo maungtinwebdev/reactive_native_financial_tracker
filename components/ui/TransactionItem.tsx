@@ -5,10 +5,12 @@ import { Swipeable, RectButton } from 'react-native-gesture-handler';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Transaction, useTransactionStore } from '@/store/transactionStore';
-import { formatCurrency, formatDate } from '@/utils/format';
+import { formatDate } from '@/utils/format';
+import { useCurrencyFormat } from '@/hooks/useCurrencyFormat';
 import { useRouter } from 'expo-router';
 import { Trash2, Pencil } from 'lucide-react-native';
 import { getCategoryIcon } from '@/utils/icons';
+import { useTranslation } from 'react-i18next';
 
 interface TransactionItemProps {
   transaction: Transaction;
@@ -23,6 +25,8 @@ export function TransactionItem({ transaction, hideIcon = false }: TransactionIt
   const isIncome = transaction.type === 'income';
   const amountColor = isIncome ? Colors[theme].success : Colors[theme].text;
   const AnimatedView = Animated.View as any;
+  const { t } = useTranslation();
+  const { formatAmount } = useCurrencyFormat();
 
   const renderRightActions = (progress: any, dragX: any) => {
     return (
@@ -70,11 +74,11 @@ export function TransactionItem({ transaction, hideIcon = false }: TransactionIt
           
           <View style={styles.details}>
             <Text style={[styles.description, { color: Colors[theme].text }]}>{transaction.description}</Text>
-            <Text style={[styles.category, { color: Colors[theme].icon }]}>{transaction.category} • {formatDate(transaction.date)}</Text>
+            <Text style={[styles.category, { color: Colors[theme].icon }]}>{t(`categories.${transaction.category}`)} • {formatDate(transaction.date)}</Text>
           </View>
 
           <Text style={[styles.amount, { color: amountColor }]}>
-            {isIncome ? '+' : '-'}{formatCurrency(transaction.amount)}
+            {isIncome ? '+' : '-'}{formatAmount(transaction.amount)}
           </Text>
         </View>
       </RectButton>

@@ -6,12 +6,13 @@ import { useTransactionStore } from '@/store/transactionStore';
 import { TransactionItem } from '@/components/ui/TransactionItem';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { formatCurrency } from '@/utils/format';
+import { useCurrencyFormat } from '@/hooks/useCurrencyFormat';
 import { Plus } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { DateNavigator } from '@/components/DateNavigator';
 import { format } from 'date-fns';
 import { SyncButton } from '@/components/SyncButton';
+import { useTranslation } from 'react-i18next';
 
 if (Platform.OS === 'android') {
   if (UIManager.setLayoutAnimationEnabledExperimental) {
@@ -24,6 +25,8 @@ export default function DashboardScreen() {
   const colorScheme = useColorScheme();
   const theme = colorScheme ?? 'light';
   const { transactions, filter, setFilter, getFilteredTransactions, dateRange, selectedDate } = useTransactionStore();
+  const { t } = useTranslation();
+  const { formatAmount } = useCurrencyFormat();
 
   useEffect(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -65,7 +68,7 @@ export default function DashboardScreen() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
             <View style={styles.headerTop}>
-              <Text style={[styles.greeting, { color: Colors[theme].text }]}>Financial Overview</Text>
+              <Text style={[styles.greeting, { color: Colors[theme].text }]}>{t('dashboard.title')}</Text>
               {/* <SyncButton /> */}
             </View>
 
@@ -76,31 +79,31 @@ export default function DashboardScreen() {
             colors={theme === 'dark' ? ['#1e3a8a', '#1e40af', '#172554'] : ['#4c669f', '#3b5998', '#192f6a']}
             style={styles.balanceCard}
           >
-            <Text style={styles.balanceLabel}>Total Balance</Text>
-            <Text style={styles.balanceAmount}>{formatCurrency(balance)}</Text>
+            <Text style={styles.balanceLabel}>{t('dashboard.totalBalance')}</Text>
+            <Text style={styles.balanceAmount}>{formatAmount(balance)}</Text>
 
             <View style={styles.summaryContainer}>
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryLabel}>Income</Text>
-                <Text style={styles.incomeAmount}>+{formatCurrency(income)}</Text>
+                <Text style={styles.summaryLabel}>{t('dashboard.income')}</Text>
+                <Text style={styles.incomeAmount}>+{formatAmount(income)}</Text>
               </View>
               <View style={[styles.summaryItem, styles.summaryBorder]}>
-                <Text style={styles.summaryLabel}>Expenses</Text>
-                <Text style={styles.expenseAmount}>-{formatCurrency(expense)}</Text>
+                <Text style={styles.summaryLabel}>{t('dashboard.expenses')}</Text>
+                <Text style={styles.expenseAmount}>-{formatAmount(expense)}</Text>
               </View>
             </View>
           </LinearGradient>
 
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: Colors[theme].text }]}>Recent Transactions</Text>
+            <Text style={[styles.sectionTitle, { color: Colors[theme].text }]}>{t('dashboard.recentTransactions')}</Text>
             <TouchableOpacity onPress={() => router.push('/(tabs)/transactions')}>
-              <Text style={{ color: Colors[theme].tint }}>See All</Text>
+              <Text style={{ color: Colors[theme].tint }}>{t('dashboard.seeAll')}</Text>
             </TouchableOpacity>
           </View>
 
           {recentTransactions.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={{ color: Colors[theme].icon }}>No transactions yet</Text>
+              <Text style={{ color: Colors[theme].icon }}>{t('dashboard.noTransactions')}</Text>
             </View>
           ) : (
             recentTransactions.map((t) => (

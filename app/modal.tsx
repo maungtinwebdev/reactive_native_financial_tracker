@@ -11,6 +11,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { format } from 'date-fns';
 import Animated from 'react-native-reanimated';
 import { getCategoryIcon } from '@/utils/icons';
+import { useTranslation } from 'react-i18next';
 
 const INCOME_CATEGORIES = ['Salary', 'Freelance', 'Investment', 'Gift', 'Other'];
 const EXPENSE_CATEGORIES = ['Food', 'Transport', 'Housing', 'Utilities', 'Shopping', 'Entertainment', 'Health', 'Education', 'Other'];
@@ -22,6 +23,7 @@ export default function ModalScreen() {
   const colorScheme = useColorScheme();
   const theme = colorScheme ?? 'light';
   const { transactions, addTransaction, updateTransaction } = useTransactionStore();
+  const { t } = useTranslation();
 
   const transaction = isEditing ? transactions.find(t => t.id === params.id) : undefined;
 
@@ -103,7 +105,7 @@ export default function ModalScreen() {
               {getCategoryIcon(category, type === 'income' ? (theme === 'dark' ? '#34d399' : Colors.light.success) : (theme === 'dark' ? '#f87171' : Colors.light.danger))}
             </AnimatedView>
           )}
-          <Text style={[styles.title, { color: Colors[theme].text }]}>{isEditing ? 'Edit Transaction' : 'New Transaction'}</Text>
+          <Text style={[styles.title, { color: Colors[theme].text }]}>{isEditing ? t('transactions.editTransaction') : t('transactions.newTransaction')}</Text>
         </View>
         <TouchableOpacity onPress={() => router.back()}>
           <X color={Colors[theme].text} size={24} />
@@ -131,7 +133,7 @@ export default function ModalScreen() {
               <Text style={[
                 styles.typeText,
                 type === 'expense' ? { color: '#fff' } : { color: Colors[theme].text }
-              ]}>Expense</Text>
+              ]}>{t('transactions.expense')}</Text>
             </TouchableOpacity>
             
             <TouchableOpacity
@@ -148,12 +150,12 @@ export default function ModalScreen() {
               <Text style={[
                 styles.typeText,
                 type === 'income' ? { color: '#fff' } : { color: Colors[theme].text }
-              ]}>Income</Text>
+              ]}>{t('transactions.income')}</Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: Colors[theme].text }]}>Amount</Text>
+            <Text style={[styles.label, { color: Colors[theme].text }]}>{t('transactions.amount')}</Text>
             <TextInput
               style={[styles.input, { color: Colors[theme].text, borderColor: Colors[theme].border, fontSize: 32 }]}
               placeholder="0.00"
@@ -166,7 +168,7 @@ export default function ModalScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: Colors[theme].text }]}>Date</Text>
+            <Text style={[styles.label, { color: Colors[theme].text }]}>{t('transactions.date')}</Text>
             <TouchableOpacity
               style={[styles.dateButton, { borderColor: Colors[theme].border }]}
               onPress={() => {
@@ -198,10 +200,10 @@ export default function ModalScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: Colors[theme].text }]}>Description</Text>
+            <Text style={[styles.label, { color: Colors[theme].text }]}>{t('transactions.description')}</Text>
             <TextInput
               style={[styles.input, { color: Colors[theme].text, borderColor: Colors[theme].border }]}
-              placeholder="What is this for?"
+              placeholder={t('transactions.description')}
               placeholderTextColor={Colors[theme].icon}
               value={description}
               onChangeText={setDescription}
@@ -209,7 +211,7 @@ export default function ModalScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: Colors[theme].text }]}>Category</Text>
+            <Text style={[styles.label, { color: Colors[theme].text }]}>{t('transactions.category')}</Text>
             <View style={styles.categoriesContainer}>
               {categories.map((cat) => (
                 <TouchableOpacity
@@ -225,7 +227,7 @@ export default function ModalScreen() {
                   <Text style={[
                     styles.categoryText,
                     category === cat ? { color: '#fff' } : { color: Colors[theme].text }
-                  ]}>{cat}</Text>
+                  ]}>{t(`categories.${cat}`)}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -234,7 +236,7 @@ export default function ModalScreen() {
         </ScrollView>
 
         <View style={[styles.footer, { borderTopColor: Colors[theme].border }]}>
-          <Button title={isEditing ? "Update Transaction" : "Save Transaction"} onPress={handleSave} />
+          <Button title={t('common.save')} onPress={handleSave} />
         </View>
       </KeyboardAvoidingView>
     </View>

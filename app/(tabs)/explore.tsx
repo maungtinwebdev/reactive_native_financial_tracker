@@ -10,6 +10,7 @@ import { formatCurrency } from '@/utils/format';
 import { format, isSameDay, isSameYear, isSameMonth, startOfYear, endOfYear, eachMonthOfInterval, isWithinInterval } from 'date-fns';
 import { generatePDF } from '@/utils/pdfGenerator';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 export default function AnalyticsScreen() {
   const colorScheme = useColorScheme();
@@ -17,6 +18,7 @@ export default function AnalyticsScreen() {
   const { setTheme } = useThemeStore();
   const { transactions } = useTransactionStore();
   const [range, setRange] = useState<'daily' | 'monthly' | 'yearly'>('monthly');
+  const { t } = useTranslation();
 
   // Filter Logic Based on Range
   const groupedTransactions = useMemo(() => {
@@ -163,14 +165,14 @@ export default function AnalyticsScreen() {
     : 0;
   
   const getRangeLabel = () => {
-    if (range === 'daily') return 'Today\'s';
-    if (range === 'yearly') return 'This Year\'s';
-    return 'Monthly';
+    if (range === 'daily') return t('analytics.daily');
+    if (range === 'yearly') return t('analytics.yearly');
+    return t('analytics.monthly');
   };
 
   const handleExportPDF = async () => {
     const allTransactions = groupedTransactions.flatMap(g => g.data);
-    const title = `${getRangeLabel()} Financial Report - ${new Date().getFullYear()}`;
+    const title = `${getRangeLabel()} ${t('analytics.title')} - ${new Date().getFullYear()}`;
     
     await generatePDF(
       title,
@@ -189,8 +191,8 @@ export default function AnalyticsScreen() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
             <View>
-              <Text style={[styles.title, { color: Colors[theme].text }]}>Financial Overview</Text>
-              <Text style={[styles.subtitle, { color: Colors[theme].icon }]}>{getRangeLabel()} Performance</Text>
+              <Text style={[styles.title, { color: Colors[theme].text }]}>{t('analytics.title')}</Text>
+              <Text style={[styles.subtitle, { color: Colors[theme].icon }]}>{t('analytics.performance', { range: getRangeLabel() })}</Text>
             </View>
           </View>
 
@@ -209,7 +211,7 @@ export default function AnalyticsScreen() {
                   styles.filterText,
                   { color: range === r ? (theme === 'dark' ? '#000' : '#fff') : Colors[theme].icon }
                 ]}>
-                  {r.charAt(0).toUpperCase() + r.slice(1)}
+                  {t(`analytics.${r}`)}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -218,46 +220,45 @@ export default function AnalyticsScreen() {
           {/* Summary Cards */}
           <View style={styles.summaryContainer}>
             <View style={[styles.summaryCard, { backgroundColor: theme === 'dark' ? '#1c1c1e' : '#fff' }]}>
-              <Text style={styles.summaryLabel}>Total Income</Text>
+              <Text style={styles.summaryLabel}>{t('analytics.totalIncome')}</Text>
               <Text style={[styles.summaryValue, { color: '#4ade80' }]}>{formatCurrency(totalIncome)}</Text>
             </View>
             <View style={[styles.summaryCard, { backgroundColor: theme === 'dark' ? '#1c1c1e' : '#fff' }]}>
-              <Text style={styles.summaryLabel}>Total Expense</Text>
+              <Text style={styles.summaryLabel}>{t('analytics.totalExpense')}</Text>
               <Text style={[styles.summaryValue, { color: '#f87171' }]}>{formatCurrency(totalExpense)}</Text>
             </View>
           </View>
 
           <View style={[styles.summaryContainer, { marginBottom: 24 }]}>
              <View style={[styles.summaryCard, { backgroundColor: theme === 'dark' ? '#1c1c1e' : '#fff' }]}>
-               <Text style={styles.summaryLabel}>Net Savings Rate</Text>
+               <Text style={styles.summaryLabel}>{t('analytics.netSavingsRate')}</Text>
                <Text style={[styles.summaryValue, { color: savingsRate >= 0 ? '#4ade80' : '#f87171' }]}>
-                 {Math.round(savingsRate)
-}%
+                 {Math.round(savingsRate)}%
                </Text>
                <Text style={[styles.summarySubtext, { color: Colors[theme].icon }]}>
-                 {savingsRate > 20 ? "Good!" : "Low"}
+                 {savingsRate > 20 ? t('analytics.good') : t('analytics.low')}
                </Text>
              </View>
              <View style={[styles.summaryCard, { backgroundColor: theme === 'dark' ? '#1c1c1e' : '#fff' }]}>
-               <Text style={styles.summaryLabel}>Expense Rate</Text>
+               <Text style={styles.summaryLabel}>{t('analytics.expenseRate')}</Text>
                <Text style={[styles.summaryValue, { color: '#f87171' }]}>
                  {Math.round(expenseRate)}%
                </Text>
                <Text style={[styles.summarySubtext, { color: Colors[theme].icon }]}>
-                 of Income
+                 {t('analytics.ofIncome')}
                </Text>
              </View>
           </View>
 
           {groupedTransactions.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={{ color: Colors[theme].icon }}>No transactions yet</Text>
+              <Text style={{ color: Colors[theme].icon }}>{t('dashboard.noTransactions')}</Text>
             </View>
           ) : (
             <>
               {/* Monthly Trend Chart */}
               <View style={[styles.chartContainer, { backgroundColor: theme === 'dark' ? '#1c1c1e' : '#fff' }]}>
-                <Text style={[styles.chartTitle, { color: Colors[theme].text }]}>Income vs Expense</Text>
+                <Text style={[styles.chartTitle, { color: Colors[theme].text }]}>{t('analytics.incomeVsExpense')}</Text>
                 <LineChart
                   data={incomeData}
                   data2={expenseData}
@@ -293,11 +294,11 @@ export default function AnalyticsScreen() {
                 <View style={styles.legendContainer}>
                   <View style={styles.legendItem}>
                     <View style={[styles.legendColor, { backgroundColor: '#4ade80' }]} />
-                    <Text style={[styles.legendText, { color: Colors[theme].text }]}>Income</Text>
+                    <Text style={[styles.legendText, { color: Colors[theme].text }]}>{t('analytics.totalIncome')}</Text>
                   </View>
                   <View style={styles.legendItem}>
                     <View style={[styles.legendColor, { backgroundColor: '#f87171' }]} />
-                    <Text style={[styles.legendText, { color: Colors[theme].text }]}>Expense</Text>
+                    <Text style={[styles.legendText, { color: Colors[theme].text }]}>{t('analytics.totalExpense')}</Text>
                   </View>
                 </View>
               </View>
@@ -305,7 +306,7 @@ export default function AnalyticsScreen() {
               {/* Category Pie Chart */}
               {categoryData.length > 0 && (
                 <View style={[styles.chartContainer, { backgroundColor: theme === 'dark' ? '#1c1c1e' : '#fff' }]}>
-                  <Text style={[styles.chartTitle, { color: Colors[theme].text }]}>Spending Distribution</Text>
+                  <Text style={[styles.chartTitle, { color: Colors[theme].text }]}>{t('analytics.spendingDistribution')}</Text>
                   <View style={{ alignItems: 'center' }}>
                     <PieChart
                       data={categoryData}
@@ -343,7 +344,7 @@ export default function AnalyticsScreen() {
               {/* Monthly Reports */}
               {range === 'monthly' && (
                 <View style={styles.sectionContainer}>
-                  <Text style={[styles.sectionTitle, { color: Colors[theme].text }]}>Monthly Reports</Text>
+                  <Text style={[styles.sectionTitle, { color: Colors[theme].text }]}>{t('analytics.monthlyReports')}</Text>
                   {groupedTransactions.map((group, index) => (
                     <View key={index} style={[styles.reportCard, { backgroundColor: theme === 'dark' ? '#1c1c1e' : '#fff' }]}>
                       <View style={styles.reportInfo}>
@@ -357,7 +358,7 @@ export default function AnalyticsScreen() {
                         onPress={() => generatePDF(`Monthly Report - ${group.title} ${new Date().getFullYear()}`, group.data, { income: group.income, expense: group.expense, balance: group.balance })}
                       >
                         <Ionicons name="document-text-outline" size={20} color={Colors[theme].text} />
-                        <Text style={[styles.exportButtonText, { color: Colors[theme].text }]}>PDF</Text>
+                        <Text style={[styles.exportButtonText, { color: Colors[theme].text }]}>{t('analytics.pdf')}</Text>
                       </TouchableOpacity>
                     </View>
                   ))}

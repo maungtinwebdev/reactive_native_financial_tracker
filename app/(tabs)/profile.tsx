@@ -15,13 +15,22 @@ import { useAuthStore } from '@/store/authStore';
 import { useThemeStore } from '@/store/themeStore';
 import { useTransactionStore } from '@/store/transactionStore';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
 
 type ThemeOption = 'light' | 'dark' | 'system';
+type LanguageOption = 'en' | 'mm' | 'jp';
 
 const THEME_OPTIONS: { value: ThemeOption; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-    { value: 'light', label: 'Light', icon: 'sunny' },
-    { value: 'dark', label: 'Dark', icon: 'moon' },
-    { value: 'system', label: 'System', icon: 'phone-portrait-outline' },
+    { value: 'light', label: 'lightMode', icon: 'sunny' },
+    { value: 'dark', label: 'darkMode', icon: 'moon' },
+    { value: 'system', label: 'system', icon: 'phone-portrait-outline' },
+];
+
+const LANGUAGE_OPTIONS: { value: LanguageOption; label: string; icon: string }[] = [
+    { value: 'en', label: 'English', icon: '🇺🇸' },
+    { value: 'mm', label: 'မြန်မာ', icon: '🇲🇲' },
+    { value: 'jp', label: '日本語', icon: '🇯🇵' },
 ];
 
 export default function ProfileScreen() {
@@ -30,16 +39,21 @@ export default function ProfileScreen() {
     const { user, signOut, isLoading, isGuest, setGuestMode } = useAuthStore();
     const { theme: currentTheme, setTheme } = useThemeStore();
     const { transactions } = useTransactionStore();
+    const { t } = useTranslation();
 
     const handleSignOut = () => {
-        Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-            { text: 'Cancel', style: 'cancel' },
+        Alert.alert(t('profile.signOut'), 'Are you sure you want to sign out?', [
+            { text: t('common.cancel'), style: 'cancel' },
             {
-                text: 'Sign Out',
+                text: t('profile.signOut'),
                 style: 'destructive',
                 onPress: signOut,
             },
         ]);
+    };
+
+    const changeLanguage = (lang: LanguageOption) => {
+        i18n.changeLanguage(lang);
     };
 
     const userEmail = isGuest ? 'Guest User' : (user?.email ?? 'Unknown');
@@ -96,7 +110,7 @@ export default function ProfileScreen() {
                     {/* Appearance Section */}
                     <View style={styles.section}>
                         <Text style={[styles.sectionTitle, { color: Colors[theme].text }]}>
-                            Appearance
+                            {t('profile.theme')}
                         </Text>
                         <View
                             style={[
@@ -107,7 +121,7 @@ export default function ProfileScreen() {
                             <View style={styles.cardHeader}>
                                 <Ionicons name="color-palette-outline" size={20} color={Colors[theme].tint} />
                                 <Text style={[styles.cardHeaderText, { color: Colors[theme].text }]}>
-                                    Theme Mode
+                                    {t('profile.theme')}
                                 </Text>
                             </View>
 
@@ -149,6 +163,82 @@ export default function ProfileScreen() {
                                                     size={22}
                                                     color={isSelected ? '#fff' : Colors[theme].icon}
                                                 />
+                                            </View>
+                                            <Text
+                                                style={[
+                                                    styles.themeOptionLabel,
+                                                    {
+                                                        color: isSelected ? '#3b5998' : Colors[theme].text,
+                                                        fontWeight: isSelected ? '700' : '500',
+                                                    },
+                                                ]}
+                                            >
+                                                {t(`profile.${option.label}`)}
+                                            </Text>
+                                            {isSelected && (
+                                                <View style={styles.checkBadge}>
+                                                    <Ionicons name="checkmark" size={12} color="#fff" />
+                                                </View>
+                                            )}
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
+                        </View>
+                    </View>
+
+                    {/* Language Section */}
+                    <View style={styles.section}>
+                        <Text style={[styles.sectionTitle, { color: Colors[theme].text }]}>
+                            {t('profile.language')}
+                        </Text>
+                        <View
+                            style={[
+                                styles.card,
+                                { backgroundColor: Colors[theme].card, borderColor: Colors[theme].border },
+                            ]}
+                        >
+                            <View style={styles.cardHeader}>
+                                <Ionicons name="language-outline" size={20} color={Colors[theme].tint} />
+                                <Text style={[styles.cardHeaderText, { color: Colors[theme].text }]}>
+                                    {t('profile.selectLanguage')}
+                                </Text>
+                            </View>
+
+                            <View style={styles.themeOptions}>
+                                {LANGUAGE_OPTIONS.map((option) => {
+                                    const isSelected = i18n.language === option.value;
+                                    return (
+                                        <TouchableOpacity
+                                            key={option.value}
+                                            style={[
+                                                styles.themeOption,
+                                                {
+                                                    backgroundColor: isSelected
+                                                        ? theme === 'dark'
+                                                            ? 'rgba(59,130,246,0.2)'
+                                                            : 'rgba(59,89,152,0.1)'
+                                                        : Colors[theme].background,
+                                                    borderColor: isSelected ? '#3b5998' : Colors[theme].border,
+                                                    borderWidth: isSelected ? 2 : 1,
+                                                },
+                                            ]}
+                                            onPress={() => changeLanguage(option.value)}
+                                            activeOpacity={0.7}
+                                        >
+                                            <View
+                                                style={[
+                                                    styles.themeIconCircle,
+                                                    {
+                                                        backgroundColor: isSelected
+                                                            ? '#3b5998'
+                                                            : theme === 'dark'
+                                                                ? 'rgba(255,255,255,0.08)'
+                                                                : 'rgba(0,0,0,0.04)',
+                                                    },
+                                                ]}
+                                            >
+                                                <Text style={{ fontSize: 20 }}>{option.icon}</Text>
                                             </View>
                                             <Text
                                                 style={[

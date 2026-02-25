@@ -19,6 +19,7 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 const OTP_LENGTH = 6;
 const RESEND_COOLDOWN = 60; // seconds
@@ -29,6 +30,7 @@ export default function VerifyScreen() {
     const router = useRouter();
     const params = useLocalSearchParams<{ email: string }>();
     const { verifyOtp, resendOtp, isLoading, pendingEmail } = useAuthStore();
+    const { t } = useTranslation();
 
     const email = params.email || pendingEmail || '';
 
@@ -255,13 +257,10 @@ export default function VerifyScreen() {
 
                         {/* Title */}
                         <Text style={[styles.title, { color: Colors[theme].text }]}>
-                            Verify Your Email
+                            {t('auth.verifyTitle')}
                         </Text>
                         <Text style={[styles.subtitle, { color: Colors[theme].icon }]}>
-                            We've sent a 6-digit verification code to
-                        </Text>
-                        <Text style={[styles.emailText, { color: Colors[theme].text }]}>
-                            {maskedEmail}
+                            {t('auth.verifySubtitle', { email: maskedEmail })}
                         </Text>
 
                         {/* OTP Input */}
@@ -353,7 +352,7 @@ export default function VerifyScreen() {
                                                 { color: otp.every((d) => d !== '') ? '#fff' : Colors[theme].icon },
                                             ]}
                                         >
-                                            Verify & Continue
+                                            {t('auth.verify')}
                                         </Text>
                                     </View>
                                 )}
@@ -363,17 +362,17 @@ export default function VerifyScreen() {
                         {/* Resend Section */}
                         <View style={styles.resendContainer}>
                             <Text style={[styles.resendLabel, { color: Colors[theme].icon }]}>
-                                Didn't receive the code?
+                                {t('auth.noCode')}
                             </Text>
                             {canResend ? (
                                 <TouchableOpacity onPress={handleResend} disabled={isLoading}>
-                                    <Text style={styles.resendLink}>Resend Code</Text>
+                                    <Text style={styles.resendLink}>{t('auth.resendCode')}</Text>
                                 </TouchableOpacity>
                             ) : (
                                 <View style={styles.timerRow}>
                                     <Ionicons name="time-outline" size={14} color={Colors[theme].icon} />
                                     <Text style={[styles.timerText, { color: Colors[theme].icon }]}>
-                                        Resend in {resendTimer}s
+                                        {t('auth.resendIn', { seconds: resendTimer })}
                                     </Text>
                                 </View>
                             )}

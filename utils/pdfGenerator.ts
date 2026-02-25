@@ -2,6 +2,7 @@ import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { Transaction } from '@/store/transactionStore';
 import { formatCurrency } from './format';
+import i18n from '@/i18n';
 
 export const generatePDF = async (title: string, transactions: Transaction[], summary: { income: number; expense: number; balance: number }) => {
   const html = `
@@ -32,15 +33,15 @@ export const generatePDF = async (title: string, transactions: Transaction[], su
         
         <div class="summary">
           <div class="summary-item">
-            <div class="label">Total Income</div>
+            <div class="label">${i18n.t('analytics.totalIncome')}</div>
             <div class="value income">${formatCurrency(summary.income)}</div>
           </div>
           <div class="summary-item">
-            <div class="label">Total Expense</div>
+            <div class="label">${i18n.t('analytics.totalExpense')}</div>
             <div class="value expense">${formatCurrency(summary.expense)}</div>
           </div>
           <div class="summary-item">
-            <div class="label">Net Balance</div>
+            <div class="label">${i18n.t('dashboard.totalBalance')}</div>
             <div class="value">${formatCurrency(summary.balance)}</div>
           </div>
         </div>
@@ -48,17 +49,17 @@ export const generatePDF = async (title: string, transactions: Transaction[], su
         <table>
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Category</th>
-              <th class="amount">Amount</th>
+              <th>${i18n.t('transactions.date')}</th>
+              <th>${i18n.t('transactions.category')}</th>
+              <th class="amount">${i18n.t('transactions.amount')}</th>
             </tr>
           </thead>
           <tbody>
             ${transactions.map(t => `
               <tr>
-                <td class="date">${new Date(t.date).toLocaleDateString()}</td>
+                <td class="date">${new Date(t.date).toLocaleDateString(i18n.language === 'mm' ? 'my-MM' : i18n.language === 'jp' ? 'ja-JP' : 'en-US')}</td>
                 <td>
-                  <div class="category">${t.category}</div>
+                  <div class="category">${i18n.t(`categories.${t.category}`)}</div>
                   ${t.description ? `<div class="note">${t.description}</div>` : ''}
                 </td>
                 <td class="amount" style="color: ${t.type === 'income' ? '#10b981' : '#ef4444'}">
