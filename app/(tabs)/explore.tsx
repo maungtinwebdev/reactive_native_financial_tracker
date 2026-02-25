@@ -153,13 +153,13 @@ export default function AnalyticsScreen() {
               <Text style={[styles.title, { color: Colors[theme].text }]}>{t('analytics.title')}</Text>
               <Text style={[styles.subtitle, { color: Colors[theme].icon }]}>{t('analytics.performance', { range: getRangeLabel() })}</Text>
             </View>
-            <TouchableOpacity 
+            {/* <TouchableOpacity 
               style={[styles.exportButton, { backgroundColor: theme === 'dark' ? '#333' : '#f3f4f6' }]}
               onPress={handleExportExcel}
             >
               <Ionicons name="document-text-outline" size={20} color={Colors[theme].text} />
               <Text style={[styles.exportButtonText, { color: Colors[theme].text }]}>{t('analytics.excel')}</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
 
           {/* Range Filter */}
