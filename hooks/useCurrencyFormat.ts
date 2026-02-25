@@ -1,13 +1,17 @@
-import { useTranslation } from 'react-i18next';
-import { useCallback } from 'react';
-import { formatCurrency } from '@/utils/format';
+import { useLocale } from './useLocale';
 
 export const useCurrencyFormat = () => {
-  const { i18n } = useTranslation();
+  const { formatCurrency, getLocaleInfo } = useLocale();
+  
+  const formatAmount = formatCurrency;
+  const getCurrentCurrency = () => getLocaleInfo().currency;
+  const getCurrentCurrencySymbol = () => getLocaleInfo().currencySymbol;
+  const currentLanguage = getLocaleInfo().language;
 
-  const formatAmount = useCallback((amount: number) => {
-    return formatCurrency(amount);
-  }, [i18n.language]);
-
-  return { formatAmount };
+  return { 
+    formatAmount, 
+    currentLanguage, 
+    getCurrentCurrency, 
+    getCurrentCurrencySymbol 
+  };
 };

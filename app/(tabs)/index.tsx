@@ -85,11 +85,11 @@ export default function DashboardScreen() {
             <View style={styles.summaryContainer}>
               <View style={styles.summaryItem}>
                 <Text style={styles.summaryLabel}>{t('dashboard.income')}</Text>
-                <Text style={styles.incomeAmount}>+{formatAmount(income)}</Text>
+                <Text style={styles.incomeAmount}>{formatAmount(income)}</Text>
               </View>
               <View style={[styles.summaryItem, styles.summaryBorder]}>
                 <Text style={styles.summaryLabel}>{t('dashboard.expenses')}</Text>
-                <Text style={styles.expenseAmount}>-{formatAmount(expense)}</Text>
+                <Text style={styles.expenseAmount}>{formatAmount(-expense)}</Text>
               </View>
             </View>
           </LinearGradient>

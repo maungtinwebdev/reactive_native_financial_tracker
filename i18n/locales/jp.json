@@ -99,6 +99,9 @@
     "Entertainment": "娯楽",
     "Health": "医療費",
     "Education": "教育費",
+    "Cosmetic": "化粧品",
+    "Kitchen": "キッチン",
+    "Bill": "請求書",
     "Other": "その他"
   }
 }

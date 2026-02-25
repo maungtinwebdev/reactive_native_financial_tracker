@@ -139,7 +139,7 @@ export default function TransactionsScreen() {
               </View>
               <View style={styles.footerItem}>
                 <Text style={styles.footerLabel}>{t('transactions.expense')}</Text>
-                <Text style={styles.expenseAmountSmall}>{formatAmount(section.expense)}</Text>
+                <Text style={styles.expenseAmountSmall}>{formatAmount(-section.expense)}</Text>
               </View>
               <View style={styles.footerItem}>
                 <Text style={styles.footerLabel}>Balance</Text>

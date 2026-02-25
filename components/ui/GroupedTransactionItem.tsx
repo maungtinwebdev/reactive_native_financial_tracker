@@ -70,7 +70,7 @@ export function GroupedTransactionItem({ group }: GroupedTransactionItemProps) {
 
         <View style={styles.rightContent}>
           <Text style={[styles.amount, { color: amountColor }]}>
-            {isIncome ? '+' : '-'}{formatAmount(group.totalAmount)}
+            {formatAmount(isIncome ? group.totalAmount : -group.totalAmount)}
           </Text>
           {expanded ? (
             <ChevronUp size={20} color={Colors[theme].icon} />

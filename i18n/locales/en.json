@@ -99,6 +99,9 @@
     "Entertainment": "Entertainment",
     "Health": "Health",
     "Education": "Education",
+    "Cosmetic": "Cosmetic",
+    "Kitchen": "Kitchen",
+    "Bill": "Bill",
     "Other": "Other"
   }
 }

@@ -6,6 +6,7 @@ import {
     TouchableOpacity,
     ScrollView,
     Alert,
+    LayoutAnimation,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +18,8 @@ import { useTransactionStore } from '@/store/transactionStore';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n';
+import { useLocaleContext } from '@/contexts/LocaleContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type ThemeOption = 'light' | 'dark' | 'system';
 type LanguageOption = 'en' | 'mm' | 'jp';
@@ -40,6 +43,20 @@ export default function ProfileScreen() {
     const { theme: currentTheme, setTheme } = useThemeStore();
     const { transactions } = useTransactionStore();
     const { t } = useTranslation();
+    const { getLocaleInfo, currentLanguage } = useLocaleContext();
+    const [selectedLanguage, setSelectedLanguage] = React.useState(currentLanguage); // Track current language
+
+    // Listen for language changes
+    React.useEffect(() => {
+        const handleLanguageChange = (lng: string) => {
+            setSelectedLanguage(lng);
+        };
+
+        i18n.on('languageChanged', handleLanguageChange);
+        return () => {
+            i18n.off('languageChanged', handleLanguageChange);
+        };
+    }, []);
 
     const handleSignOut = () => {
         Alert.alert(t('profile.signOut'), 'Are you sure you want to sign out?', [
@@ -52,8 +69,22 @@ export default function ProfileScreen() {
         ]);
     };
 
-    const changeLanguage = (lang: LanguageOption) => {
-        i18n.changeLanguage(lang);
+    const changeLanguage = async (lang: LanguageOption) => {
+        // Add smooth animation
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        
+        // Change language immediately
+        await i18n.changeLanguage(lang);
+        
+        // Update local state immediately
+        setSelectedLanguage(lang);
+        
+        // Also update AsyncStorage to persist the selection
+        try {
+            await AsyncStorage.setItem('user-language', lang);
+        } catch (error) {
+            console.error('Failed to save language preference:', error);
+        }
     };
 
     const userEmail = isGuest ? 'Guest User' : (user?.email ?? 'Unknown');
@@ -188,7 +219,7 @@ export default function ProfileScreen() {
                     </View>
 
                     {/* Language Section */}
-                    <View style={styles.section}>
+                    <View style={styles.section} key={`lang-${selectedLanguage}`}>
                         <Text style={[styles.sectionTitle, { color: Colors[theme].text }]}>
                             {t('profile.language')}
                         </Text>
@@ -207,7 +238,7 @@ export default function ProfileScreen() {
 
                             <View style={styles.themeOptions}>
                                 {LANGUAGE_OPTIONS.map((option) => {
-                                    const isSelected = i18n.language === option.value;
+                                    const isSelected = selectedLanguage === option.value;
                                     return (
                                         <TouchableOpacity
                                             key={option.value}
@@ -281,6 +312,20 @@ export default function ProfileScreen() {
                                         <View>
                                             <Text style={[styles.menuLabel, { color: Colors[theme].text }]}>Email</Text>
                                             <Text style={[styles.menuValue, { color: Colors[theme].icon }]}>{userEmail}</Text>
+                                        </View>
+                                    </View>
+                                </TouchableOpacity>
+
+                                <View style={[styles.menuDivider, { backgroundColor: Colors[theme].border }]} />
+
+                                <TouchableOpacity style={styles.menuItem}>
+                                    <View style={styles.menuLeft}>
+                                        <Ionicons name="cash-outline" size={20} color={Colors[theme].icon} />
+                                        <View>
+                                            <Text style={[styles.menuLabel, { color: Colors[theme].text }]}>Currency</Text>
+                                            <Text style={[styles.menuValue, { color: Colors[theme].icon }]}>
+                                                {getLocaleInfo().currency} ({getLocaleInfo().currencySymbol})
+                                            </Text>
                                         </View>
                                     </View>
                                 </TouchableOpacity>

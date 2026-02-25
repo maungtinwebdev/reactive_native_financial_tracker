@@ -14,7 +14,7 @@ import { getCategoryIcon } from '@/utils/icons';
 import { useTranslation } from 'react-i18next';
 
 const INCOME_CATEGORIES = ['Salary', 'Freelance', 'Investment', 'Gift', 'Other'];
-const EXPENSE_CATEGORIES = ['Food', 'Transport', 'Housing', 'Utilities', 'Shopping', 'Entertainment', 'Health', 'Education', 'Other'];
+const EXPENSE_CATEGORIES = ['Food', 'Transport', 'Housing', 'Utilities', 'Shopping', 'Entertainment', 'Health', 'Education','Cosmetic', 'Kitchen', 'Bill', 'Other'];
 
 export default function ModalScreen() {
   const router = useRouter();

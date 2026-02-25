@@ -78,7 +78,7 @@ export function TransactionItem({ transaction, hideIcon = false }: TransactionIt
           </View>
 
           <Text style={[styles.amount, { color: amountColor }]}>
-            {isIncome ? '+' : '-'}{formatAmount(transaction.amount)}
+            {formatAmount(isIncome ? transaction.amount : -transaction.amount)}
           </Text>
         </View>
       </RectButton>

@@ -9,6 +9,7 @@ import '@/i18n'; // Import i18n configuration
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthStore } from '@/store/authStore';
+import { LocaleProvider } from '@/contexts/LocaleContext';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -55,29 +56,31 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <AuthGate />
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="auth" options={{
-            headerShown: false,
-            animation: 'fade',
-          }} />
-          <Stack.Screen name="verify" options={{
-            headerShown: false,
-            animation: 'slide_from_right',
-          }} />
-          <Stack.Screen name="modal" options={{
-            presentation: 'modal',
-            headerShown: false,
-            animation: 'slide_from_bottom',
-            gestureEnabled: true,
-            gestureDirection: 'vertical',
-            contentStyle: {
-              backgroundColor: 'transparent'
-            }
-          }} />
-        </Stack>
-        <StatusBar style="auto" />
+        <LocaleProvider>
+          <AuthGate />
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="auth" options={{
+              headerShown: false,
+              animation: 'fade',
+            }} />
+            <Stack.Screen name="verify" options={{
+              headerShown: false,
+              animation: 'slide_from_right',
+            }} />
+            <Stack.Screen name="modal" options={{
+              presentation: 'modal',
+              headerShown: false,
+              animation: 'slide_from_bottom',
+              gestureEnabled: true,
+              gestureDirection: 'vertical',
+              contentStyle: {
+                backgroundColor: 'transparent'
+              }
+            }} />
+          </Stack>
+          <StatusBar style="auto" />
+        </LocaleProvider>
       </ThemeProvider>
     </GestureHandlerRootView>
   );
