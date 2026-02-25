@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import XLSX from 'xlsx';
 import { Transaction } from '@/store/transactionStore';
@@ -71,17 +71,17 @@ export const generateExcel = async (title: string, transactions: Transaction[], 
     let fileUri: string;
     try {
       // Try new API first
-      const cacheDir = FileSystem.Paths.cache.uri;
+      const cacheDir = FileSystem.documentDirectory || FileSystem.cacheDirectory;
       fileUri = `${cacheDir}${fileName}`;
-      console.log('Using new API, fileUri:', fileUri);
+      console.log('Using legacy API, fileUri:', fileUri);
     } catch (dirError: any) {
-      console.log('New API failed, trying fallback:', dirError);
+      console.log('Legacy API failed, trying fallback:', dirError);
       // Fallback to simple URI construction
       fileUri = `file://${fileName}`;
       console.log('Using fallback, fileUri:', fileUri);
     }
 
-    // Write file
+    // Write file using legacy API
     try {
       await FileSystem.writeAsStringAsync(fileUri, excelBuffer);
       console.log('File written successfully');
