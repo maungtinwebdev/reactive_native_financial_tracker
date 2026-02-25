@@ -8,7 +8,7 @@
     "scheme": "financialtracker",
     "userInterfaceStyle": "automatic",
     "updates": {
-      "url": "https://u.expo.dev/0db7c3d3-2b0b-46f9-b5f8-008f4d175db7"
+      "url": "https://u.expo.dev/[will-be-set-by-eas-init]"
     },
     "runtimeVersion": {
       "policy": "appVersion"
@@ -55,9 +55,7 @@
     },
     "extra": {
       "router": {},
-      "eas": {
-        "projectId": "0db7c3d3-2b0b-46f9-b5f8-008f4d175db7"
-      }
+      "eas": {}
     }
   }
 }
