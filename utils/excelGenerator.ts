@@ -8,6 +8,8 @@ import { format } from 'date-fns';
 
 export const generateExcel = async (title: string, transactions: Transaction[], summary: { income: number; expense: number; balance: number }) => {
   try {
+    console.log('Starting Excel generation...');
+    
     // Create workbook
     const wb = XLSX.utils.book_new();
 
@@ -62,22 +64,48 @@ export const generateExcel = async (title: string, transactions: Transaction[], 
     const excelBuffer = XLSX.write(wb, { type: 'base64', bookType: 'xlsx' });
     const fileName = `${title.replace(/[^a-z0-9]/gi, '_')}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
     
-    // Use legacy API for compatibility
-    const cacheDir = FileSystem.Paths.cache.uri;
-    const fileUri = `${cacheDir}${fileName}`;
+    console.log('Generated Excel buffer, length:', excelBuffer.length);
+    console.log('File name:', fileName);
+    
+    // Try different directory approaches
+    let fileUri: string;
+    try {
+      // Try new API first
+      const cacheDir = FileSystem.Paths.cache.uri;
+      fileUri = `${cacheDir}${fileName}`;
+      console.log('Using new API, fileUri:', fileUri);
+    } catch (dirError: any) {
+      console.log('New API failed, trying fallback:', dirError);
+      // Fallback to simple URI construction
+      fileUri = `file://${fileName}`;
+      console.log('Using fallback, fileUri:', fileUri);
+    }
 
-    // Write file using legacy API
-    await FileSystem.writeAsStringAsync(fileUri, excelBuffer);
+    // Write file
+    try {
+      await FileSystem.writeAsStringAsync(fileUri, excelBuffer);
+      console.log('File written successfully');
+    } catch (writeError: any) {
+      console.error('Error writing file:', writeError);
+      throw new Error(`Failed to write Excel file: ${writeError?.message || writeError}`);
+    }
 
     // Share file
-    await Sharing.shareAsync(fileUri, {
-      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      dialogTitle: `${title} - ${i18n.t('analytics.excel')}`,
-      UTI: 'com.microsoft.excel.xlsx'
-    });
+    try {
+      await Sharing.shareAsync(fileUri, {
+        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        dialogTitle: `${title} - ${i18n.t('analytics.excel')}`,
+        UTI: 'com.microsoft.excel.xlsx'
+      });
+      console.log('File shared successfully');
+    } catch (shareError: any) {
+      console.error('Error sharing file:', shareError);
+      throw new Error(`Failed to share Excel file: ${shareError?.message || shareError}`);
+    }
 
   } catch (error) {
     console.error('Error generating Excel:', error);
+    console.error('Error details:', JSON.stringify(error, null, 2));
     throw error;
   }
 };
