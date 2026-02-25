@@ -67,7 +67,9 @@
     "spendingDistribution": "支出の内訳",
     "monthlyReports": "月次レポート",
     "dailyBreakdown": "日次内訳",
-    "pdf": "PDF"
+    "excel": "Excel",
+    "summary": "概要",
+    "transactions": "取引"
   },
   "auth": {
     "welcomeBack": "おかえりなさい",

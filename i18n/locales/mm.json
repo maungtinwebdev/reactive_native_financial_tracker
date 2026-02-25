@@ -67,7 +67,9 @@
     "spendingDistribution": "သုံးစွဲမှု ခွဲဝေပုံ",
     "monthlyReports": "လစဉ် အစီရင်ခံစာများ",
     "dailyBreakdown": "နေ့စဉ် အသေးစိတ်",
-    "pdf": "PDF"
+    "excel": "Excel",
+    "summary": "အကျဉ်းချုပ်",
+    "transactions": "ငွေလုပ်ငန်းများ"
   },
   "auth": {
     "welcomeBack": "ကြိုဆိုပါတယ်",

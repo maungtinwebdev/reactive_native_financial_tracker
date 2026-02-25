@@ -67,7 +67,9 @@
     "spendingDistribution": "Spending Distribution",
     "monthlyReports": "Monthly Reports",
     "dailyBreakdown": "Daily Breakdown",
-    "pdf": "PDF"
+    "excel": "Excel",
+    "summary": "Summary",
+    "transactions": "Transactions"
   },
   "auth": {
     "welcomeBack": "Welcome Back",

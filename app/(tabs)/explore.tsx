@@ -1,14 +1,14 @@
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, ScrollView, View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { PieChart, LineChart } from 'react-native-gifted-charts';
+import { PieChart } from 'react-native-gifted-charts';
 import { useTransactionStore } from '@/store/transactionStore';
 import { useThemeStore } from '@/store/themeStore';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { formatCurrency } from '@/utils/format';
 import { format, isSameDay, isSameYear, isSameMonth, startOfYear, endOfYear, eachMonthOfInterval, isWithinInterval } from 'date-fns';
-import { generatePDF } from '@/utils/pdfGenerator';
+import { generateExcel } from '@/utils/excelGenerator';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
@@ -86,47 +86,6 @@ export default function AnalyticsScreen() {
     });
   }, [transactions, range]);
 
-  // Prepare Trend Data (Dynamic based on range)
-  const { incomeData, expenseData, maxMonthlyValue } = useMemo(() => {
-    // Show all available data for the selected range, but reverse to show oldest to newest
-    const recentGroups = [...groupedTransactions].reverse();
-    
-    const income: any[] = [];
-    const expense: any[] = [];
-    
-    recentGroups.forEach(group => {
-      // Label formatting
-      let label = group.title;
-      // if (range === 'monthly') label = group.title.split(' ')[0].substring(0, 3);
-      // if (range === 'daily') label = group.title.split(' ')[1]; // Just the day number if "MMM dd"
-      
-      income.push({
-        value: group.income,
-        label: label,
-        labelTextStyle: { color: Colors[theme].icon, fontSize: 10 },
-        dataPointText: '',
-      });
-      
-      expense.push({
-        value: group.expense,
-        dataPointText: '',
-      });
-    });
-
-    // Add empty state if needed for better visualization
-    if (range === 'daily' && recentGroups.length === 0) {
-      // Show empty hours? Or just empty.
-    }
-
-    const maxVal = Math.max(
-      ...income.map(d => d.value),
-      ...expense.map(d => d.value),
-      100
-    );
-    
-    return { incomeData: income, expenseData: expense, maxMonthlyValue: maxVal };
-  }, [groupedTransactions, theme, range]);
-
   // Prepare Category Data (All Time for selected range view)
   const { categoryData, totalExpense: pieTotalExpense } = useMemo(() => {
     // Use all groups for the pie chart too
@@ -154,8 +113,8 @@ export default function AnalyticsScreen() {
   }, [groupedTransactions, range]);
 
   // Calculate Insights
-  const totalIncome = incomeData.reduce((acc, curr) => acc + curr.value, 0);
-  const totalExpense = expenseData.reduce((acc, curr) => acc + curr.value, 0);
+  const totalIncome = groupedTransactions.reduce((acc, curr) => acc + curr.income, 0);
+  const totalExpense = groupedTransactions.reduce((acc, curr) => acc + curr.expense, 0);
   const netSavings = totalIncome - totalExpense;
   const savingsRate = totalIncome > 0 
     ? (netSavings / totalIncome) * 100 
@@ -170,11 +129,11 @@ export default function AnalyticsScreen() {
     return t('analytics.monthly');
   };
 
-  const handleExportPDF = async () => {
+  const handleExportExcel = async () => {
     const allTransactions = groupedTransactions.flatMap(g => g.data);
     const title = `${getRangeLabel()} ${t('analytics.title')} - ${new Date().getFullYear()}`;
     
-    await generatePDF(
+    await generateExcel(
       title,
       allTransactions,
       {
@@ -194,6 +153,13 @@ export default function AnalyticsScreen() {
               <Text style={[styles.title, { color: Colors[theme].text }]}>{t('analytics.title')}</Text>
               <Text style={[styles.subtitle, { color: Colors[theme].icon }]}>{t('analytics.performance', { range: getRangeLabel() })}</Text>
             </View>
+            <TouchableOpacity 
+              style={[styles.exportButton, { backgroundColor: theme === 'dark' ? '#333' : '#f3f4f6' }]}
+              onPress={handleExportExcel}
+            >
+              <Ionicons name="document-text-outline" size={20} color={Colors[theme].text} />
+              <Text style={[styles.exportButtonText, { color: Colors[theme].text }]}>{t('analytics.excel')}</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Range Filter */}
@@ -256,53 +222,6 @@ export default function AnalyticsScreen() {
             </View>
           ) : (
             <>
-              {/* Monthly Trend Chart */}
-              <View style={[styles.chartContainer, { backgroundColor: theme === 'dark' ? '#1c1c1e' : '#fff' }]}>
-                <Text style={[styles.chartTitle, { color: Colors[theme].text }]}>{t('analytics.incomeVsExpense')}</Text>
-                <LineChart
-                  data={incomeData}
-                  data2={expenseData}
-                  height={220}
-                  showVerticalLines
-                  spacing={range === 'daily' ? 60 : 44}
-                  initialSpacing={20}
-                  color1="#4ade80"
-                  color2="#f87171"
-                  textColor1="#4ade80"
-                  textColor2="#f87171"
-                  dataPointsHeight={6}
-                  dataPointsWidth={6}
-                  dataPointsColor1="#4ade80"
-                  dataPointsColor2="#f87171"
-                  textShiftY={-2}
-                  textFontSize={10}
-                  thickness={3}
-                  hideRules
-                  yAxisColor="transparent"
-                  xAxisColor="transparent"
-                  yAxisTextStyle={{ color: Colors[theme].icon, fontSize: 10 }}
-                  verticalLinesColor={theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}
-                  xAxisLabelTextStyle={{ color: Colors[theme].icon, fontSize: 10 }}
-                  curved
-                  isAnimated
-                  startFillColor1="#4ade80"
-                  endFillColor1="#4ade80"
-                  startOpacity1={0.2}
-                  endOpacity1={0.0}
-                  areaChart // Makes it an area chart with gradient fill
-                />
-                <View style={styles.legendContainer}>
-                  <View style={styles.legendItem}>
-                    <View style={[styles.legendColor, { backgroundColor: '#4ade80' }]} />
-                    <Text style={[styles.legendText, { color: Colors[theme].text }]}>{t('analytics.totalIncome')}</Text>
-                  </View>
-                  <View style={styles.legendItem}>
-                    <View style={[styles.legendColor, { backgroundColor: '#f87171' }]} />
-                    <Text style={[styles.legendText, { color: Colors[theme].text }]}>{t('analytics.totalExpense')}</Text>
-                  </View>
-                </View>
-              </View>
-
               {/* Category Pie Chart */}
               {categoryData.length > 0 && (
                 <View style={[styles.chartContainer, { backgroundColor: theme === 'dark' ? '#1c1c1e' : '#fff' }]}>
@@ -355,10 +274,10 @@ export default function AnalyticsScreen() {
                       </View>
                       <TouchableOpacity 
                         style={[styles.exportButton, { backgroundColor: theme === 'dark' ? '#333' : '#f3f4f6' }]}
-                        onPress={() => generatePDF(`Monthly Report - ${group.title} ${new Date().getFullYear()}`, group.data, { income: group.income, expense: group.expense, balance: group.balance })}
+                        onPress={() => generateExcel(`Monthly Report - ${group.title} ${new Date().getFullYear()}`, group.data, { income: group.income, expense: group.expense, balance: group.balance })}
                       >
                         <Ionicons name="document-text-outline" size={20} color={Colors[theme].text} />
-                        <Text style={[styles.exportButtonText, { color: Colors[theme].text }]}>{t('analytics.pdf')}</Text>
+                        <Text style={[styles.exportButtonText, { color: Colors[theme].text }]}>{t('analytics.excel')}</Text>
                       </TouchableOpacity>
                     </View>
                   ))}
