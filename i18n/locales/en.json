@@ -13,7 +13,14 @@
     "income": "Income",
     "expenses": "Expenses",
     "appearance": "Appearance",
-    "account": "Account"
+    "account": "Account",
+    "notifications": "Notifications",
+    "dailyReminder": "Daily Reminder",
+    "dailyReminderDesc": "Remind me every day at 8:00 PM",
+    "reminderSet": "Reminder Set",
+    "reminderSetDesc": "You will receive a daily reminder at 8:00 PM to record your expenses and income.",
+    "permissionDenied": "Permission Denied",
+    "enableNotifications": "Please enable notifications in your phone settings."
   },
   "common": {
     "save": "Save",

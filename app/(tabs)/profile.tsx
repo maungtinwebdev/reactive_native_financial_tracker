@@ -7,6 +7,7 @@ import {
     ScrollView,
     Alert,
     LayoutAnimation,
+    Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,6 +21,7 @@ import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n';
 import { useLocaleContext } from '@/contexts/LocaleContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { checkDailyReminderStatus, requestNotificationPermissions, scheduleDailyReminder, cancelAllReminders } from '@/utils/notificationService';
 
 type ThemeOption = 'light' | 'dark' | 'system';
 type LanguageOption = 'en' | 'mm' | 'jp';
@@ -45,6 +47,11 @@ export default function ProfileScreen() {
     const { t } = useTranslation();
     const { getLocaleInfo, currentLanguage } = useLocaleContext();
     const [selectedLanguage, setSelectedLanguage] = React.useState(currentLanguage); // Track current language
+    const [isReminderEnabled, setIsReminderEnabled] = React.useState(false);
+
+    React.useEffect(() => {
+        checkDailyReminderStatus().then(setIsReminderEnabled);
+    }, []);
 
     // Listen for language changes
     React.useEffect(() => {
@@ -69,16 +76,32 @@ export default function ProfileScreen() {
         ]);
     };
 
+    const toggleReminder = async (value: boolean) => {
+        if (value) {
+            const hasPermission = await requestNotificationPermissions();
+            if (!hasPermission) {
+                Alert.alert(t('profile.permissionDenied'), t('profile.enableNotifications'));
+                return;
+            }
+            await scheduleDailyReminder(22, 47); // 8:00 PM
+            setIsReminderEnabled(true);
+            Alert.alert(t('profile.reminderSet'), t('profile.reminderSetDesc'));
+        } else {
+            await cancelAllReminders();
+            setIsReminderEnabled(false);
+        }
+    };
+
     const changeLanguage = async (lang: LanguageOption) => {
         // Add smooth animation
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        
+
         // Change language immediately
         await i18n.changeLanguage(lang);
-        
+
         // Update local state immediately
         setSelectedLanguage(lang);
-        
+
         // Also update AsyncStorage to persist the selection
         try {
             await AsyncStorage.setItem('user-language', lang);
@@ -346,16 +369,47 @@ export default function ProfileScreen() {
                         </View>
                     )}
 
+                    {/* Notifications Section */}
+                    <View style={styles.section}>
+                        <Text style={[styles.sectionTitle, { color: Colors[theme].text }]}>
+                            {t('profile.notifications')}
+                        </Text>
+                        <View
+                            style={[
+                                styles.card,
+                                { backgroundColor: Colors[theme].card, borderColor: Colors[theme].border },
+                            ]}
+                        >
+                            <View style={styles.menuItem}>
+                                <View style={styles.menuLeft}>
+                                    <Ionicons name="notifications-outline" size={20} color={Colors[theme].icon} />
+                                    <View>
+                                        <Text style={[styles.menuLabel, { color: Colors[theme].text }]}>{t('profile.dailyReminder')}</Text>
+                                        <Text style={[styles.menuValue, { color: Colors[theme].icon }]}>
+                                            {t('profile.dailyReminderDesc')}
+                                        </Text>
+                                    </View>
+                                </View>
+                                <Switch
+                                    value={isReminderEnabled}
+                                    onValueChange={toggleReminder}
+                                    trackColor={{ false: Colors[theme].border, true: '#3b5998' }}
+                                    thumbColor={isReminderEnabled ? '#fff' : '#f4f3f4'}
+                                />
+                            </View>
+                        </View>
+                    </View>
+
                     {/* Sign In / Sign Out Button */}
                     <View style={styles.section}>
                         {isGuest ? (
                             <TouchableOpacity
                                 style={[
                                     styles.signOutButton,
-                                    { 
-                                        backgroundColor: '#3b5998', 
+                                    {
+                                        backgroundColor: '#3b5998',
                                         borderColor: '#3b5998',
-                                        opacity: 0.5 
+                                        opacity: 0.5
                                     },
                                 ]}
                                 onPress={() => setGuestMode(false)}

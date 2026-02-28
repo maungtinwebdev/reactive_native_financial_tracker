@@ -10,6 +10,7 @@ import '@/i18n'; // Import i18n configuration
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthStore } from '@/store/authStore';
 import { LocaleProvider } from '@/contexts/LocaleContext';
+import '@/utils/notificationService';
 
 export const unstable_settings = {
   anchor: '(tabs)',
