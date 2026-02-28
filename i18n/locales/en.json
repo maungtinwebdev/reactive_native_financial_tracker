@@ -55,7 +55,11 @@
     "deleteConfirmTitle": "Delete Transaction",
     "deleteConfirmMessage": "Are you sure you want to delete this transaction?",
     "totalIncome": "Total Income",
-    "totalExpense": "Total Expense"
+    "totalExpense": "Total Expense",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "clearFilter": "Clear Filter",
+    "noFilteredTransactions": "No transactions in this period"
   },
   "analytics": {
     "title": "Financial Overview",
