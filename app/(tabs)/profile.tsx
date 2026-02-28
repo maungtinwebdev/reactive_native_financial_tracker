@@ -8,6 +8,7 @@ import {
     Alert,
     LayoutAnimation,
     Switch,
+    Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +22,7 @@ import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n';
 import { useLocaleContext } from '@/contexts/LocaleContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { checkDailyReminderStatus, requestNotificationPermissions, scheduleDailyReminder, cancelAllReminders } from '@/utils/notificationService';
 
 type ThemeOption = 'light' | 'dark' | 'system';
@@ -49,8 +51,23 @@ export default function ProfileScreen() {
     const [selectedLanguage, setSelectedLanguage] = React.useState(currentLanguage); // Track current language
     const [isReminderEnabled, setIsReminderEnabled] = React.useState(false);
 
+    // Default time is 8 PM (20:00)
+    const [reminderTime, setReminderTime] = React.useState(() => {
+        const d = new Date();
+        d.setHours(20, 0, 0, 0);
+        return d;
+    });
+    const [showTimePicker, setShowTimePicker] = React.useState(false);
+
     React.useEffect(() => {
-        checkDailyReminderStatus().then(setIsReminderEnabled);
+        checkDailyReminderStatus().then(status => {
+            setIsReminderEnabled(status.enabled);
+            if (status.enabled) {
+                const d = new Date();
+                d.setHours(status.hour, status.minute, 0, 0);
+                setReminderTime(d);
+            }
+        });
     }, []);
 
     // Listen for language changes
@@ -83,12 +100,31 @@ export default function ProfileScreen() {
                 Alert.alert(t('profile.permissionDenied'), t('profile.enableNotifications'));
                 return;
             }
-            await scheduleDailyReminder(22, 47); // 8:00 PM
+            await scheduleDailyReminder(reminderTime.getHours(), reminderTime.getMinutes());
             setIsReminderEnabled(true);
-            Alert.alert(t('profile.reminderSet'), t('profile.reminderSetDesc'));
+
+            Alert.alert(
+                t('profile.reminderSet'),
+                `You will receive a daily reminder at ${reminderTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} to record your expenses and income.`
+            );
         } else {
             await cancelAllReminders();
             setIsReminderEnabled(false);
+        }
+    };
+
+    const handleTimeChange = async (event: any, selectedDate?: Date) => {
+        if (Platform.OS === 'android') {
+            setShowTimePicker(false);
+        }
+
+        if (selectedDate) {
+            setReminderTime(selectedDate);
+
+            // If reminder is currently enabled, reschedule it with the new time
+            if (isReminderEnabled) {
+                await scheduleDailyReminder(selectedDate.getHours(), selectedDate.getMinutes());
+            }
         }
     };
 
@@ -386,7 +422,9 @@ export default function ProfileScreen() {
                                     <View>
                                         <Text style={[styles.menuLabel, { color: Colors[theme].text }]}>{t('profile.dailyReminder')}</Text>
                                         <Text style={[styles.menuValue, { color: Colors[theme].icon }]}>
-                                            {t('profile.dailyReminderDesc')}
+                                            {isReminderEnabled
+                                                ? `Remind me at ${reminderTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                                                : t('profile.dailyReminderDesc')}
                                         </Text>
                                     </View>
                                 </View>
@@ -397,6 +435,51 @@ export default function ProfileScreen() {
                                     thumbColor={isReminderEnabled ? '#fff' : '#f4f3f4'}
                                 />
                             </View>
+
+                            {isReminderEnabled && (
+                                <>
+                                    <View style={[styles.menuDivider, { backgroundColor: Colors[theme].border }]} />
+                                    <View style={styles.menuItem}>
+                                        <Text style={[styles.menuLabel, { color: Colors[theme].text }]}>Time</Text>
+
+                                        {Platform.OS === 'ios' ? (
+                                            <DateTimePicker
+                                                value={reminderTime}
+                                                mode="time"
+                                                display="default"
+                                                onChange={handleTimeChange}
+                                                style={{ width: 100 }}
+                                            />
+                                        ) : (
+                                            <TouchableOpacity
+                                                style={{
+                                                    backgroundColor: theme === 'dark' ? 'rgba(59,130,246,0.2)' : 'rgba(59,89,152,0.1)',
+                                                    paddingVertical: 8,
+                                                    paddingHorizontal: 12,
+                                                    borderRadius: 8
+                                                }}
+                                                onPress={() => setShowTimePicker(true)}
+                                            >
+                                                <Text style={{
+                                                    color: '#3b5998',
+                                                    fontWeight: '600'
+                                                }}>
+                                                    {reminderTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        )}
+
+                                        {Platform.OS === 'android' && showTimePicker && (
+                                            <DateTimePicker
+                                                value={reminderTime}
+                                                mode="time"
+                                                display="default"
+                                                onChange={handleTimeChange}
+                                            />
+                                        )}
+                                    </View>
+                                </>
+                            )}
                         </View>
                     </View>
 

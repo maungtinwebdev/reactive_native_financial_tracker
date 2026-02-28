@@ -66,11 +66,24 @@ export async function scheduleDailyReminder(hour: number = 20, minute: number = 
 }
 
 /**
- * Checks if there are any scheduled reminders
+ * Checks if there are any scheduled reminders and returns their time
  */
-export async function checkDailyReminderStatus(): Promise<boolean> {
+export async function checkDailyReminderStatus(): Promise<{ enabled: boolean; hour: number; minute: number }> {
     const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
-    return scheduledNotifications.length > 0;
+
+    if (scheduledNotifications.length > 0) {
+        const trigger = scheduledNotifications[0].trigger as any;
+        if (trigger && trigger.type === Notifications.SchedulableTriggerInputTypes.DAILY) {
+            return {
+                enabled: true,
+                hour: trigger.hour ?? 20,
+                minute: trigger.minute ?? 0,
+            };
+        }
+        return { enabled: true, hour: 20, minute: 0 };
+    }
+
+    return { enabled: false, hour: 20, minute: 0 };
 }
 
 /**
